@@ -1,6 +1,6 @@
 const { graphqlRequest } = require("./Shopify");
 
-const fetchShopifyVariants = async () => {
+const fetchRetailVariants = async () => {
   const variants = [];
   let hasNextPage = true;
   let endCursor = null;
@@ -77,4 +77,4 @@ const fetchShopifyVariants = async () => {
   }
 };
 
-module.exports = { fetchShopifyVariants };
+module.exports = { fetchRetailVariants };

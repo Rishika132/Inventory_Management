@@ -1,87 +1,165 @@
+// sync.controller.js
 
-const {  shopify } = require("../utils/Shopify");
-const { fetchShopifyProducts } = require("../utils/fetchProduct");
-const Variant = require("../model/sync.model");
+const Wholesale = require("../model/wholesale.model");
+const Retail = require("../model/retail.model");
+const Sync = require("../model/sync.model");
 const SkippedProduct = require("../model/skipped.model");
 
-const Sync = async (req, res) => {
+const { fetchShopifyVariants } = require("../utils/wholesaleproduct");
+const { fetchRetailVariants } = require("../utils/retailproduct");
+
+// 1. WHOLESALE SYNC FUNCTION
+const syncWholesale = async () => {
+  const variants = await fetchShopifyVariants();
+  const inserted = [];
+  const skipped = [];
+
+  for (const variant of variants) {
+    const sku = variant.sku?.trim();
+
+    if (!sku) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: "Missing SKU",
+        json: variant,
+      });
+      skipped.push({ reason: "Missing SKU", productId: variant.product_id });
+      continue;
+    }
+
+    try {
+      const saved = await Wholesale.findOneAndUpdate(
+        { sku },
+        {
+          inventory_item_id: variant.inventory_item_id,
+          quantity: variant.quantity,
+          sku,
+          product_id: variant.product_id,
+          product_title: variant.product_title,
+          variant_title: variant.variant_title,
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      inserted.push(saved);
+    } catch (err) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: err.message,
+        json: variant,
+      });
+      skipped.push({ sku, reason: err.message });
+    }
+  }
+
+  return { inserted, skipped };
+};
+
+// 2. RETAIL SYNC FUNCTION
+const syncRetail = async () => {
+  const variants = await fetchRetailVariants();
+  const inserted = [];
+  const skipped = [];
+
+  for (const variant of variants) {
+    const sku = variant.sku?.trim();
+
+    if (!sku) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: "Missing SKU",
+        json: variant,
+      });
+      skipped.push({ reason: "Missing SKU", productId: variant.product_id });
+      continue;
+    }
+
+    try {
+      const saved = await Retail.findOneAndUpdate(
+        { sku },
+        {
+          inventory_item_id: variant.inventory_item_id,
+          quantity: variant.quantity,
+          sku,
+          product_id: variant.product_id,
+          product_title: variant.product_title,
+          variant_title: variant.variant_title,
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      inserted.push(saved);
+    } catch (err) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: err.message,
+        json: variant,
+      });
+      skipped.push({ sku, reason: err.message });
+    }
+  }
+
+  return { inserted, skipped };
+};
+
+// 3. SYNC FROM WHOLESALE TO SYNC COLLECTION
+const syncFromWholesaleToSync = async () => {
+  const wholesaleData = await Wholesale.find();
+  const inserted = [];
+  const failed = [];
+
+  for (const item of wholesaleData) {
+    try {
+      const saved = await Sync.findOneAndUpdate(
+        { sku: item.sku },
+        {
+          sku: item.sku,
+          quantity: item.quantity,
+          product_title: item.product_title,
+          variant_title: item.variant_title,
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      inserted.push(saved);
+    } catch (err) {
+      failed.push({ sku: item.sku, error: err.message });
+    }
+  }
+
+  return { inserted, failed };
+};
+
+// MAIN SYNC CONTROLLER
+const runFullSync = async (req, res) => {
   try {
-    const limitParam = req.params.limit;
-    const limit = parseInt(limitParam) ;  
-    
-    if (isNaN(limit) || limit <= 0) {
-      return res.status(400).json({ error: "Invalid limit parameter" });
-    }
-      const products = await fetchShopifyProducts(limit);
-    let inserted = [];
-    let skipped = [];
-
-    for (const product of products) {
-      const productVariants = product.variants?.edges || [];
-
-      for (const variantEdge of productVariants) {
-        const variant = variantEdge.node;
-        const sku = variant?.sku?.trim();
-        const inventoryQuantity = variant.inventoryQuantity;
-        
-
-        if (!sku) {
-          await SkippedProduct.create({
-            productId: product.id,
-            reason: "Missing SKU",
-            json: variant,
-          });
-          skipped.push({ reason: "Missing SKU", variantId: variant.id });
-          continue;
-        }
-
-        try {
-          const inventoryItemId = variant.inventoryItem?.id;
-
-          let quantity = 0;
-
-          // ✅ Fetch quantity using REST API
-          if (inventoryItemId) {
-            const levels = await shopify.inventoryLevel.list({
-              inventory_item_ids: inventoryItemId,
-            });
-           
-            quantity = inventoryQuantity;
-          }
-
-          const savedVariant = await Variant.findOneAndUpdate(
-            { sku },
-            {
-              sku,
-              quantity,
-              threshold: 5,
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-          );
-
-          inserted.push(savedVariant);
-        } catch (err) {
-          await SkippedProduct.create({
-            productId: product.id,
-            reason: err.message,
-            json: variant,
-          });
-          skipped.push({ sku, reason: err.message });
-        }
-      }
-    }
+    const wholesaleResult = await syncWholesale();
+    const retailResult = await syncRetail();
+    const syncResult = await syncFromWholesaleToSync();
 
     return res.status(200).json({
-      message: "✅ Variant sync complete",
-      insertedCount: inserted.length,
-      skippedCount: skipped.length,
-      inserted,
-      skipped,
+      message: "✅ Full sync completed successfully",
+      wholesale: {
+        insertedCount: wholesaleResult.inserted.length,
+        skippedCount: wholesaleResult.skipped.length,
+      },
+      retail: {
+        insertedCount: retailResult.inserted.length,
+        skippedCount: retailResult.skipped.length,
+      },
+      sync: {
+        insertedCount: syncResult.inserted.length,
+        failedCount: syncResult.failed.length,
+        data: syncResult.inserted,
+        failed: syncResult.failed,
+      },
     });
   } catch (err) {
-    console.error("❌ Shopify Sync Error:", err.message);
-    return res.status(500).json({ error: "Failed to sync products from Shopify" });
+    console.error("❌ Full sync error:", err.message);
+    return res.status(500).json({ error: "Full sync failed" });
   }
 };
 
-module.exports = { Sync };
+module.exports = {
+  runFullSync, // main API
+  syncWholesale,
+  syncRetail,
+  syncFromWholesaleToSync,
+};

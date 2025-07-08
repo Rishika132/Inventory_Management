@@ -1,12 +1,14 @@
 const express = require("express");
 const {login }  = require("../controller/login.controller");
-const {Sync }  = require("../controller/sync.controller");
+
 
 
 const router = express.Router();
 
+//http://localhost:3000/login
+
 router.post("/login", login);
-router.get("/sync/:limit", Sync);
+
 
 
 

@@ -4,10 +4,10 @@ const bodyParser = require("body-parser");
 const LoginRouter = require("./routes/login.route");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const inventoryRoutes = require("./routes/inventory.route");
 const WebhookRouter = require("./routes/webhook.route");
-const WholeSaleRouter = require("./routes/wholesale.route");
-const RetailRouter = require("./routes/retail.route");
+const SyncRouter = require("./routes/sync.route");
+const PageRouter = require("./routes/pagination.route");
+const UpdateRouter = require("./routes/inventory.route");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -28,9 +28,9 @@ mongoose.connect(process.env.MONGODB_URI)
 
         app.use("/", LoginRouter);
         app.use("/webhook", WebhookRouter);
-        app.use("/api", inventoryRoutes);
-        app.use("/store",WholeSaleRouter);
-        app.use("/store", RetailRouter);
+        app.use("/api",SyncRouter);
+          app.use("/api",PageRouter);
+          app.use("/update",UpdateRouter);
 
 
         app.listen(3000, () => {
