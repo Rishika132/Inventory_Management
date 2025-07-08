@@ -15,7 +15,7 @@ const login = async (request, response) => {
         let payload = { currentUser: user._id };
         let token = jwt.sign(payload, "dflfdkjreiwreriovnxvmnvxcm@#12fdfre#");
         response.cookie("token", token);
-        return response.status(200).json({ message: "Sign In Success",user,  token});
+        return response.status(200).json({ message: "Sign In Success" ,  token});
     }
 
     return response.status(401).json({ error: "Unauthorized user | Invalid password" });

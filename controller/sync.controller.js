@@ -1,58 +1,78 @@
-const fetchShopifyProducts = require("../utils/Shopify");
-const Product = require("../model/sync.model");
-const SkippedProduct = require("../model/skipped.model"); 
+
+const {  shopify } = require("../utils/Shopify");
+const { fetchShopifyProducts } = require("../utils/fetchProduct");
+const Variant = require("../model/sync.model");
+const SkippedProduct = require("../model/skipped.model");
+
 const Sync = async (req, res) => {
   try {
-    const products = await fetchShopifyProducts();
+    const limitParam = req.params.limit;
+    const limit = parseInt(limitParam) ;  
+    
+    if (isNaN(limit) || limit <= 0) {
+      return res.status(400).json({ error: "Invalid limit parameter" });
+    }
+      const products = await fetchShopifyProducts(limit);
     let inserted = [];
     let skipped = [];
 
     for (const product of products) {
-      const variant = product.variants?.edges?.[0]?.node;
-      const sku = variant?.sku?.trim();
+      const productVariants = product.variants?.edges || [];
 
-      console.log("➡️ Processing SKU:", sku);
+      for (const variantEdge of productVariants) {
+        const variant = variantEdge.node;
+        const sku = variant?.sku?.trim();
+        const inventoryQuantity = variant.inventoryQuantity;
+        
 
-      if (!sku) {
-        console.warn("⏭️ Skipping product due to missing SKU:", product.id);
+        if (!sku) {
+          await SkippedProduct.create({
+            productId: product.id,
+            reason: "Missing SKU",
+            json: variant,
+          });
+          skipped.push({ reason: "Missing SKU", variantId: variant.id });
+          continue;
+        }
 
-        // Save to SkippedProduct collection ⬇️
-        await SkippedProduct.create({
-          productId: product.id,
-          reason: "Missing SKU",
-          json: product,
-        });
+        try {
+          const inventoryItemId = variant.inventoryItem?.id;
 
-        skipped.push({ id: product.id, reason: "Missing SKU" });
-        continue;
-      }
+          let quantity = 0;
 
-      try {
-        const savedProduct = await Product.findOneAndUpdate(
-          { sku },
-          {
-            sku,
-            json: product,
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        inserted.push(savedProduct);
-        console.log("✅ Saved product with SKU:", sku);
-      } catch (err) {
-        console.error(`❌ Failed to save product with SKU ${sku}:`, err.message);
+          // ✅ Fetch quantity using REST API
+          if (inventoryItemId) {
+            const levels = await shopify.inventoryLevel.list({
+              inventory_item_ids: inventoryItemId,
+            });
+           
+            quantity = inventoryQuantity;
+          }
 
-        await SkippedProduct.create({
-          productId: product.id,
-          reason: err.message,
-          json: product,
-        });
+          const savedVariant = await Variant.findOneAndUpdate(
+            { sku },
+            {
+              sku,
+              quantity,
+              threshold: 5,
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
 
-        skipped.push({ sku, reason: err.message });
+          inserted.push(savedVariant);
+        } catch (err) {
+          await SkippedProduct.create({
+            productId: product.id,
+            reason: err.message,
+            json: variant,
+          });
+          skipped.push({ sku, reason: err.message });
+        }
       }
     }
 
     return res.status(200).json({
-      message: "✅ Sync complete",
+      message: "✅ Variant sync complete",
       insertedCount: inserted.length,
       skippedCount: skipped.length,
       inserted,

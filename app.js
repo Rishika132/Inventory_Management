@@ -4,6 +4,10 @@ const bodyParser = require("body-parser");
 const LoginRouter = require("./routes/login.route");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const inventoryRoutes = require("./routes/inventory.route");
+const WebhookRouter = require("./routes/webhook.route");
+const WholeSaleRouter = require("./routes/wholesale.route");
+const RetailRouter = require("./routes/retail.route");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -23,6 +27,11 @@ mongoose.connect(process.env.MONGODB_URI)
         console.log("Connected to MongoDB");
 
         app.use("/", LoginRouter);
+        app.use("/webhook", WebhookRouter);
+        app.use("/api", inventoryRoutes);
+        app.use("/store",WholeSaleRouter);
+        app.use("/store", RetailRouter);
+
 
         app.listen(3000, () => {
             console.log("Server started on port 3000");
