@@ -47,7 +47,8 @@ const setShopifyInventory = async (inventory_item_id, quantity) => {
     // Remove Shopify global ID prefix if present
     const cleanedInventoryItemId = inventory_item_id.replace("gid://shopify/InventoryItem/", "");
     const location_id = process.env.SHOPIFY_STORE_LOCATION_ID;
-
+    console.log(cleanedInventoryItemId);
+    console.log(location_id);
     // Make sure required fields exist
     if (!cleanedInventoryItemId || !location_id) {
       console.warn("Missing inventory_item_id or location_id");
