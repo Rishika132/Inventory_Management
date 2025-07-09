@@ -3,7 +3,6 @@ const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
 const { setShopifyInventory } = require("../utils/update");
 
-
 const location_id = process.env.SHOPIFY_LOCATION_ID;
 
 const updateBulkInventory = async (req, res) => {
