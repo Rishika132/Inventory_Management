@@ -20,7 +20,7 @@ location_id = process.env.SHOPIFY_LOCATION_ID;
       });
 
       
-      await shopify.inventoryLevel.set({
+      await shopify.inventoryLevel.adjust({
         location_id: location_id,
         inventory_item_id: inventory_item_id,
         available: quantity,

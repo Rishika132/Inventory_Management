@@ -1,7 +1,7 @@
 
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
-const { setShopifyInventory } = require("../utils/updateStore");
+const { setShopifyInventory } = require("../utils/update");
 const Webhook2 = async (req, res) => {
   
   try {
@@ -10,7 +10,7 @@ const Webhook2 = async (req, res) => {
     for (const item of order.line_items || []) {
       const sku = item.sku?.trim();
       const qtyOrdered = item.quantity;
-console.log(sku+'----',qtyOrdered)
+
       if (!sku || !qtyOrdered) continue;
 
       // 🔽 Update quantity in Retail MongoDB
@@ -22,7 +22,7 @@ console.log(sku+'----',qtyOrdered)
       const inventoryId = wholesaleProduct.inventory_item_id;
       const currentQty = wholesaleProduct.quantity || 0;
       const newQty = currentQty - qtyOrdered;
-      console.log(inventoryId);
+     
 
       if (!inventoryId) {
         console.warn(`⚠️ Inventory ID missing for SKU ${sku}`);
