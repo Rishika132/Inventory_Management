@@ -13,9 +13,9 @@ const login = async (request, response) => {
         if (user.password === password) {
         user.password = undefined;
         let payload = { currentUser: user._id };
-        console.log('JWT_SECRET:', process.env.JWT_SECRET);
+        // console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
-     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+     const token = jwt.sign(payload,"dflfdkjreiwreriovnxvmnvxcm@#12fdfre#", { expiresIn: '1h' });
         response.cookie("token", token);
         return response.status(200).json({ message: "Sign In Success" ,  token});
     }

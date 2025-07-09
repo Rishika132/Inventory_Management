@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
  try{ 
   let cookies = request.cookies;
   let token = cookies.token;
-  let decodeMessage =  jwt.verify(token,process.env.JWT_SECRET);
+  let decodeMessage =  jwt.verify(token,"dflfdkjreiwreriovnxvmnvxcm@#12fdfre#");
   console.log(decodeMessage);
   next();
  }
