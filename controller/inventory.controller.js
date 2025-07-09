@@ -31,11 +31,20 @@ const updateBulkInventory = async (req, res) => {
         continue;
       }
 
+            const retailDoc = await Retail.findOne({ sku });
+
+      if (!retailDoc) {
+        results.push({ sku, success: false, error: "SKU not found in retail" });
+        continue;
+      }
+        
       const inventory_item_id = wholesaleDoc.inventory_item_id;
+      const inventoryId= retailDoc.inventory_item_id;
 
       // Shopify update
       await setShopifyInventory(inventory_item_id, quantity, Number(location_id));
-      await setRetailShopifyInventory(inventory_item_id, quantity, Number(location_id));
+
+      await setRetailShopifyInventory(inventoryId, quantity, Number(location_id));
 
       // Update wholesale
       await Wholesale.updateOne({ sku }, { quantity, threshold });
