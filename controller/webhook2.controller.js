@@ -1,5 +1,5 @@
 
-const { Wholesale } = require("../model/wholesale.model");
+const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const { setShopifyInventory } = require("../utils/updateStore");
 const Webhook2 = async (req, res) => {
