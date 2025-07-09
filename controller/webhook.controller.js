@@ -1,7 +1,7 @@
 
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
-const { setShopifyInventory } = require("../utils/updateStore");
+const { setRetailShopifyInventory } = require("../utils/updateStore");
 const Webhook = async (req, res) => {
   
   try {
@@ -30,7 +30,7 @@ const Webhook = async (req, res) => {
       }
 
       // ✅ Update Shopify inventory
-      await setShopifyInventory(inventoryId, newQty);
+      await setRetailShopifyInventory(inventoryId, newQty);
 
       // 🔽 Update wholesale DB
       await Retail.updateOne({ sku }, { quantity: newQty });

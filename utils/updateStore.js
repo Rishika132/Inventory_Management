@@ -11,7 +11,7 @@ const shopify = new Shopify({
   accessToken: process.env.SHOPIFY_ACCESS_TOKEN_STORE,
 });
 
-const setShopifyInventory = async (inventory_item_id, quantity) => {
+const setRetailShopifyInventory = async (inventory_item_id, quantity) => {
   try {
   
     const cleanedInventoryItemId = inventory_item_id.replace("gid://shopify/InventoryItem/", "");
@@ -41,4 +41,4 @@ const setShopifyInventory = async (inventory_item_id, quantity) => {
   }
 };
 
-module.exports = { setShopifyInventory, shopify };
+module.exports = { setRetailShopifyInventory, shopify };
