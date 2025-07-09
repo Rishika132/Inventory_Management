@@ -17,7 +17,7 @@ const Webhook2 = async (req, res) => {
       await Retail.findOneAndUpdate({ sku },{ $inc: { quantity: -qtyOrdered } } );
 
       // 🔽 Fetch wholesale product
-      const wholesaleProduct = await Wholesale.find( sku );
+      const wholesaleProduct = await Wholesale.findOne({sku});
       console.log( wholesaleProduct);
       const inventoryId = wholesaleProduct.inventory_item_id;
       const currentQty = wholesaleProduct.quantity || 0;
