@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+const jwt = require ("jsonwebtoken");
 
 // Middleware to verify JWT token from Authorization header
 const auth = async (req, res, next) => {
@@ -22,4 +22,4 @@ const auth = async (req, res, next) => {
   }
 };
 
-export default auth;
+module.exports = { auth };
