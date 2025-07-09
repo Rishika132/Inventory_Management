@@ -35,6 +35,7 @@ const updateBulkInventory = async (req, res) => {
 
       // Shopify update
       await setShopifyInventory(inventory_item_id, quantity, Number(location_id));
+      await setRetailShopifyInventory(inventory_item_id, quantity, Number(location_id));
 
       // Update wholesale
       await Wholesale.updateOne({ sku }, { quantity, threshold });
@@ -56,7 +57,8 @@ const updateBulkInventory = async (req, res) => {
       );
 
        await setShopifyInventory(inventory_item_id, quantity);
-       await setRetailShopifyInventory(inventory_item_id, quantity);
+
+     
 
       results.push({ sku, success: true });
 
