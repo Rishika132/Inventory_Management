@@ -3,10 +3,10 @@ const { Wholesale } = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const { setShopifyInventory } = require("../utils/updateStore");
 const Webhook2 = async (req, res) => {
-  console.log("a")
+  
   try {
     const order = req.body;
-console.log(req.body);
+
     for (const item of order.line_items || []) {
       const sku = item.sku?.trim();
       const qtyOrdered = item.quantity;
@@ -17,7 +17,7 @@ console.log(req.body);
       await Retail.findOneAndUpdate({ sku },{ $inc: { quantity: -qtyOrdered } } );
 
       // 🔽 Fetch wholesale product
-      const wholesaleProduct = await Wholesale.findOne({ sku });
+      const wholesaleProduct = await Wholesale.find({ sku });
       console.log( wholesaleProduct);
       const inventoryId = wholesaleProduct.inventory_item_id;
       const currentQty = wholesaleProduct.quantity || 0;
