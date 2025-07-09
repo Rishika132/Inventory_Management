@@ -2,7 +2,6 @@ const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
 const { setShopifyInventory } = require("../utils/update");
-const { setRetailShopifyInventory } = require("../utils/retailproduct");
 
 
 const location_id = process.env.SHOPIFY_LOCATION_ID;
@@ -56,10 +55,7 @@ const updateBulkInventory = async (req, res) => {
         { upsert: true }
       );
 
-       await setShopifyInventory(inventory_item_id, quantity);
-       
-        await setRetailShopifyInventory(inventory_item_id, quantity);
-
+       await setShopifyInventory(inventoryId, quantity);
 
       results.push({ sku, success: true });
 
