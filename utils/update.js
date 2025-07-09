@@ -61,7 +61,7 @@ const setShopifyInventory = async (inventory_item_id, quantity) => {
     });
 
     // Adjust inventory level
-    await shopify.inventoryLevel.adjust({
+    await shopify.inventoryLevel.set({
       location_id,
       inventory_item_id: cleanedInventoryItemId,
       available: quantity,
