@@ -108,6 +108,15 @@ const syncFromWholesaleToSync = async () => {
 
   for (const item of retailData) {
     try {
+      // Check if SKU exists in Wholesale too
+      const wholesaleItem = await Wholesale.findOne({ sku: item.sku });
+
+      if (!wholesaleItem) {
+        failed.push({ sku: item.sku, error: "SKU not found in Wholesale" });
+        continue;
+      }
+
+      // Insert into Sync only if SKU exists in both
       const saved = await Sync.findOneAndUpdate(
         { sku: item.sku },
         {
@@ -118,6 +127,7 @@ const syncFromWholesaleToSync = async () => {
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
+
       inserted.push(saved);
     } catch (err) {
       failed.push({ sku: item.sku, error: err.message });
