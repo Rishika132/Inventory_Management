@@ -50,6 +50,15 @@ const addUser = async (request, response) => {
     }
 };
 
+const fetchUsers = async(request , response)=>{
+  Login.find({ role: "user" })
+    .then(result=>{
+        return response.status(200).json({users:result});
+    }).catch(err =>{
+        return response.status(500).json({error: "Internal Server Error"});
+    });
+}
 
-module.exports = {login , addUser};
+
+module.exports = {login , addUser , fetchUsers};
 
