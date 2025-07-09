@@ -10,7 +10,7 @@ const Webhook2 = async (req, res) => {
     for (const item of order.line_items || []) {
       const sku = item.sku?.trim();
       const qtyOrdered = item.quantity;
-
+console.log(sku+'----',qtyOrdered)
       if (!sku || !qtyOrdered) continue;
 
       // 🔽 Update quantity in Retail MongoDB
