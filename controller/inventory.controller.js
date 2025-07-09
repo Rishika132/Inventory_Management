@@ -1,70 +1,68 @@
-const { updateShopifyInventoryGraphQL } = require("../utils/update");
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
+const { setShopifyInventory } = require("../utils/update");
 
-const updateInventoryController = async (req, res) => {
+const location_id = process.env.SHOPIFY_LOCATION_ID;
+
+const updateBulkInventory = async (req, res) => {
   const updates = req.body;
 
-  if (!Array.isArray(updates)) {
-    return res.status(400).json({ success: false, error: "Request must be an array of objects" });
+  if (!Array.isArray(updates) || updates.length === 0) {
+    return res.status(400).json({ error: "Request body must be a non-empty array." });
   }
 
-  let updatedItems = [];
-  let errors = [];
+  const results = [];
 
   for (const item of updates) {
     const { sku, quantity, threshold } = item;
 
-    if (!sku || quantity == null || threshold == null) {
-      errors.push({ sku, error: "Missing required fields" });
+    if (!sku || quantity === undefined || threshold === undefined) {
+      results.push({ sku, success: false, error: "Missing SKU, quantity, or threshold" });
       continue;
     }
 
     try {
-      // 1. Find inventory item ID from Wholesale
-      const wholesaleItem = await Wholesale.findOne({ sku });
+      const wholesaleDoc = await Wholesale.findOne({ sku });
 
-      if (!wholesaleItem || !wholesaleItem.inventory_item_id) {
-        errors.push({ sku, error: "Wholesale item not found or missing inventory_item_id" });
+      if (!wholesaleDoc) {
+        results.push({ sku, success: false, error: "SKU not found in wholesale" });
         continue;
       }
 
-      const inventoryItemId = wholesaleItem.inventory_item_id;
+      const inventory_item_id = wholesaleDoc.inventory_item_id;
 
-      // 2. Update Shopify inventory via GraphQL
-      await updateShopifyInventoryGraphQL(inventoryItemId, quantity, threshold);
+      // Shopify update
+      await setShopifyInventory(inventory_item_id, quantity, Number(location_id));
 
-      // 3. Update Wholesale
-      await Wholesale.findOneAndUpdate({ sku }, { quantity, threshold });
+      // Update wholesale
+      await Wholesale.updateOne({ sku }, { quantity, threshold });
 
-      // 4. Update Retail
-      await Retail.findOneAndUpdate({ sku }, { quantity, threshold });
+      // Update retail
+      await Retail.updateOne({ sku }, { quantity, threshold });
 
-      // 5. Update Sync collection
+      // Update sync
       await Sync.findOneAndUpdate(
         { sku },
         {
+          sku,
           quantity,
           threshold,
-          product_title: wholesaleItem.product_title || "N/A",
-          variant_title: wholesaleItem.variant_title || "N/A",
+          product_title: wholesaleDoc.product_title,
+          variant_title: wholesaleDoc.variant_title
         },
         { upsert: true }
       );
 
-      updatedItems.push({ sku, inventory_item_id: inventoryItemId });
+      results.push({ sku, success: true });
+
     } catch (err) {
-      console.error(`❌ Error processing SKU: ${sku}`, err.message);
-      errors.push({ sku, error: err.message });
+      console.error(`Error updating ${sku}:`, err.message);
+      results.push({ sku, success: false, error: err.message });
     }
   }
 
-  return res.json({
-    success: true,
-    updated: updatedItems,
-    errors,
-  });
+  return res.status(200).json({ message: "Bulk inventory update completed", results });
 };
 
-module.exports = { updateInventoryController };
+module.exports = { updateBulkInventory };

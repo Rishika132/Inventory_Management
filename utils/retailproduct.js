@@ -36,7 +36,7 @@ const fetchRetailVariants = async () => {
       `;
 
       console.log("🔄 Sending GraphQL query to Shopify...");
-      const result = await graphqlRequest(query);
+      const result = await graphqlRequest({ query });
       console.log("✅ Received Shopify response.");
 
       // ✅ Defensive check

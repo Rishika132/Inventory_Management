@@ -10,6 +10,7 @@ const retailSchema = new mongoose.Schema({
     required: true,
   },
   sku: { type: String, required: true, unique: true },
+    threshold: { type: Number, required: true, default: 5 },
   product_id: {
     type: String,
     required: true,
