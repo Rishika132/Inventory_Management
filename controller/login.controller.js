@@ -13,7 +13,7 @@ const login = async (request, response) => {
         if (user.password === password) {
         user.password = undefined;
         let payload = { currentUser: user._id };
-        let token = jwt.sign(payload, "dflfdkjreiwreriovnxvmnvxcm@#12fdfre#");
+        let token = jwt.sign(payload,  process.env.JWT_SECRET);
         response.cookie("token", token);
         return response.status(200).json({ message: "Sign In Success" ,  token});
     }
