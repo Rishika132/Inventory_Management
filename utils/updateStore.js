@@ -1,18 +1,17 @@
 
-
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+require("dotenv").config();
 
 const Shopify = require("shopify-api-node");
 
 const shopify = new Shopify({
-  shopName: process.env.SHOPIFY_STORE,
-  accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
+  shopName: process.env.SHOPIFY_STORES,
+  accessToken: process.env.SHOPIFY_ACCESS_TOKEN_STORE,
 });
 
 const setShopifyInventory = async (inventory_item_id, quantity, location_id) => {
 
 inventory_item_id = inventory_item_id.replace("gid://shopify/InventoryItem/",'');
-location_id = process.env.SHOPIFY_LOCATION_ID;
+location_id = process.env.SHOPIFY_STORE_LOCATION_ID;
 
     
       await shopify.inventoryItem.update(inventory_item_id, {
