@@ -16,7 +16,9 @@ const setRetailShopifyInventory = async (inventory_item_id, quantity) => {
   
     const cleanedInventoryItemId = inventory_item_id.replace("gid://shopify/InventoryItem/", "");
     const location_id = process.env.SHOPIFY_STORE_LOCATION_ID;
-   
+   console.log(cleanedInventoryItemId);
+   console.log(location_id);
+   console.log(quantity);
     
     if (!cleanedInventoryItemId || !location_id) {
       console.warn("Missing inventory_item_id or location_id");
