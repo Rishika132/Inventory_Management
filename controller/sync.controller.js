@@ -102,11 +102,11 @@ const syncRetail = async () => {
 
 // 3. SYNC FROM WHOLESALE TO SYNC COLLECTION
 const syncFromWholesaleToSync = async () => {
-  const wholesaleData = await Wholesale.find();
+  const retailData = await Retail.find();
   const inserted = [];
   const failed = [];
 
-  for (const item of wholesaleData) {
+  for (const item of retailData) {
     try {
       const saved = await Sync.findOneAndUpdate(
         { sku: item.sku },

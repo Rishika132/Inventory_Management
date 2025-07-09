@@ -1,4 +1,4 @@
-const { graphqlRequest } = require("./Shopify");
+const { graphqlRequest } = require("./retailShopify");
 
 const fetchRetailVariants = async () => {
   const variants = [];
