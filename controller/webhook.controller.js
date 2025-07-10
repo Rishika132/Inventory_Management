@@ -1,39 +1,61 @@
 
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
+const Sync = require("../model/sync.model");
 const { setRetailShopifyInventory } = require("../utils/updateStore");
 const Webhook = async (req, res) => {
   
   try {
-    const order = req.body;
-    console.log(JSON.stringify(order));
-    for (const item of order.line_items || []) {
-      const sku = item.sku?.trim();
-      const qtyOrdered = item.quantity;
+      const order = req.body;
+    console.log("🔔 financial_status:", order.financial_status);
 
-      if (!sku || !qtyOrdered) continue;
+    const isRefund = order.refunds && order.refunds.length > 0;
+
+    const items = isRefund
+      ? order.refunds.flatMap(refund =>
+          refund.refund_line_items.map(refundItem => ({
+            sku: refundItem.line_item?.sku?.trim(),
+            quantity: refundItem.quantity
+          }))
+        )
+      : order.line_items.map(item => ({
+          sku: item.sku?.trim(),
+          quantity: item.quantity
+        }));
+
+    for (const { sku, quantity } of items) {
+      if (!sku || !quantity) continue;
+
+        const retailProduct = await Retail.findOne({ sku });
+            if (!retailProduct) {
+              console.warn(`❌ SKU ${sku} not found in Wholesale`);
+              continue;
+            }
+      
+            const inventoryId = retailProduct.inventory_item_id;
+            const currentQty = retailProduct.quantity || 0;
+      
+            if (!inventoryId) {
+              console.warn(`⚠️ Inventory ID missing for SKU ${sku}`);
+              continue;
+            }
+      
+            const newQty = isRefund
+              ? currentQty + quantity
+              : currentQty - quantity;
 
       // 🔽 Update quantity in Retail MongoDB
-      await Wholesale.findOneAndUpdate({ sku },{ $inc: { quantity: -qtyOrdered } } );
-
-      // 🔽 Fetch wholesale product
-      const retailProduct = await Retail.findOne({sku:sku});
-      console.log( retailProduct);
-      const inventoryId = retailProduct.inventory_item_id;
-      const currentQty = retailProduct.quantity || 0;
-      const newQty = currentQty - qtyOrdered;
+      await Wholesale.findOneAndUpdate({ sku },{ $inc: { quantity: isRefund ? quantity : -quantity  } } );
+      
+      await Retail.updateOne({ sku }, { quantity: newQty });
+      
+      await Sync.updateOne({ sku }, { quantity: newQty });
      
-
-      if (!inventoryId) {
-        console.warn(`⚠️ Inventory ID missing for SKU ${sku}`);
-        continue;
-      }
-
       // ✅ Update Shopify inventory
       await setRetailShopifyInventory(inventoryId, newQty);
 
       // 🔽 Update wholesale DB
-      await Retail.updateOne({ sku }, { quantity: newQty });
+    
 
       console.log(`✅ SKU ${sku} updated. New Qty: ${newQty}`);
     }
