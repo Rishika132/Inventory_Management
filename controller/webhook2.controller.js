@@ -48,26 +48,33 @@
 // }
 
 // module.exports = { Webhook2 };
-
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
+const Sync = require("../model/sync.model");
 const { setShopifyInventory } = require("../utils/update");
 
 const Webhook2 = async (req, res) => {
   try {
     const order = req.body;
-    console.log(order.financial_status);
-    // 🔍 Check if this is a refund
-    const isRefund = order.financial_status === 'refunded' || order.cancelled_at;
+    console.log("🔔 financial_status:", order.financial_status);
 
-    // 🔁 Loop through all line items
-    for (const item of order.line_items || []) {
-      const sku = item.sku?.trim();
-      const qtyOrdered = item.quantity;
+    const isRefund = order.refunds && order.refunds.length > 0;
 
-      if (!sku || !qtyOrdered) continue;
+    const items = isRefund
+      ? order.refunds.flatMap(refund =>
+          refund.refund_line_items.map(refundItem => ({
+            sku: refundItem.line_item?.sku?.trim(),
+            quantity: refundItem.quantity
+          }))
+        )
+      : order.line_items.map(item => ({
+          sku: item.sku?.trim(),
+          quantity: item.quantity
+        }));
 
-      // 🔍 Fetch wholesale product
+    for (const { sku, quantity } of items) {
+      if (!sku || !quantity) continue;
+
       const wholesaleProduct = await Wholesale.findOne({ sku });
       if (!wholesaleProduct) {
         console.warn(`❌ SKU ${sku} not found in Wholesale`);
@@ -82,22 +89,22 @@ const Webhook2 = async (req, res) => {
         continue;
       }
 
-      // 🧮 Calculate new quantity
       const newQty = isRefund
-        ? currentQty + qtyOrdered  // If refund → increase
-        : currentQty - qtyOrdered; // If normal → decrease
+        ? currentQty + quantity
+        : currentQty - quantity;
 
-      // 🔄 Update MongoDB
       await Retail.findOneAndUpdate(
         { sku },
-        { $inc: { quantity:isRefund ? qtyOrdered : -qtyOrdered} }
+        { $inc: { quantity: isRefund ? quantity : -quantity } }
       );
-      await Wholesale.updateOne({ sku }, { quantity: newQty });
 
-      // 🚀 Update Shopify inventory
+      await Wholesale.updateOne({ sku }, { quantity: newQty });
+       await Sync.updateOne({ sku }, { quantity: newQty });
+
+
       await setShopifyInventory(inventoryId, newQty);
 
-      console.log(`✅ SKU ${sku} ${isRefund ? 'refunded' : 'sold'}. New Qty: ${newQty}`);
+      console.log(`✅ SKU ${sku} ${isRefund ? 'restocked (refund)' : 'sold'}. New Qty: ${newQty}`);
     }
 
     return res.status(200).json({
