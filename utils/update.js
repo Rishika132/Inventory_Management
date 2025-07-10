@@ -37,7 +37,7 @@ const setShopifyInventory = async (inventory_item_id, quantity) => {
       available: quantity,
     });
 
-    console.log(`✅ Inventory updated: Item ID ${cleanedInventoryItemId}, Qty: ${quantity}`);
+    console.log(`✅ Inventory updated store1: Item ID ${cleanedInventoryItemId}, Qty: ${quantity}`);
   } catch (error) {
     console.error(`❌ Shopify inventory update failed: ${error.message}`);
     throw error;

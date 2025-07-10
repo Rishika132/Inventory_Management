@@ -8,6 +8,7 @@ const WebhookRouter = require("./routes/webhook.route");
 const SyncRouter = require("./routes/sync.route");
 const PageRouter = require("./routes/pagination.route");
 const UpdateRouter = require("./routes/inventory.route");
+const CSVRouter = require("./routes/csv.route");
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -31,6 +32,7 @@ mongoose.connect(process.env.MONGODB_URI)
         app.use("/api",SyncRouter);
           app.use("/api",PageRouter);
           app.use("/update",UpdateRouter);
+          app.use('/api', CSVRouter);
 
 
         app.listen(3000, () => {
