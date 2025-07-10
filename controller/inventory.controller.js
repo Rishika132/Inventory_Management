@@ -65,10 +65,6 @@ const updateBulkInventory = async (req, res) => {
         { upsert: true }
       );
 
-       await setShopifyInventory(inventory_item_id, quantity);
-
-     
-
       results.push({ sku, success: true });
 
     } catch (err) {
