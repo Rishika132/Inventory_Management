@@ -18,7 +18,7 @@ router.get("/users",auth,fetchUsers);
 
 router.delete("/delete/:id",auth,deleteUser);
 
-router.put("/update/:id",updateUser);
+router.put("/update/:id", auth ,updateUser);
 
 
 module.exports = router;
