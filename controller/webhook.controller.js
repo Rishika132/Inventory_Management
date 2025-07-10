@@ -6,7 +6,7 @@ const Webhook = async (req, res) => {
   
   try {
     const order = req.body;
-    console.log(order);
+    console.log(JSON.stringify(order));
     for (const item of order.line_items || []) {
       const sku = item.sku?.trim();
       const qtyOrdered = item.quantity;
