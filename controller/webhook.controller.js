@@ -3,8 +3,8 @@ const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
 const { setRetailShopifyInventory } = require("../utils/updateStore");
+
 const Webhook = async (req, res) => {
-  
   try {
       const order = req.body;
     console.log("🔔 financial_status:", order.financial_status);
@@ -44,7 +44,6 @@ const Webhook = async (req, res) => {
               ? currentQty + quantity
               : currentQty - quantity;
 
-      // 🔽 Update quantity in Retail MongoDB
       await Wholesale.findOneAndUpdate({ sku },{ $inc: { quantity: isRefund ? quantity : -quantity  } } );
       
       await Retail.updateOne({ sku }, { quantity: newQty });
@@ -54,7 +53,6 @@ const Webhook = async (req, res) => {
       // ✅ Update Shopify inventory
       await setRetailShopifyInventory(inventoryId, newQty);
 
-      // 🔽 Update wholesale DB
     
 
       console.log(`✅ SKU ${sku} updated. New Qty: ${newQty}`);
