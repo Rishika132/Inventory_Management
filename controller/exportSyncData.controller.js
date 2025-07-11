@@ -75,13 +75,9 @@ const exportSyncData = async (req, res) => {
 
     // 🚫 Direct linking from /tmp isn't possible on most cloud platforms
     // ✅ Send file as response directly
-    res.setHeader('Content-Type', 'csv');
+    res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-     const fileUrl = `http://localhost:3000/exports/${fileName}`;
-    return res.status(200).json({
-      message: '✅ CSV exported successfully',
-      url: fileUrl,
-    });
+    return res.send(csv);
 
   } catch (err) {
     console.error('❌ CSV export error:', err.message);
