@@ -8,51 +8,88 @@ const SkippedProduct = require("../model/skipped.model");
 const { fetchShopifyVariants } = require("../utils/wholesaleproduct");
 const { fetchRetailVariants } = require("../utils/retailproduct");
 
+//batch function
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const batchProcess = async (data, batchSize, handler, delayMs = 1000) => {
+  const total = data.length;
+  const result = [];
+
+  for (let i = 0; i < total; i += batchSize) {
+    const batch = data.slice(i, i + batchSize);
+    console.log(`Processing batch ${i / batchSize + 1} of ${Math.ceil(total / batchSize)}`);
+
+    // ✅ Make sure handler is a function
+    if (typeof handler !== 'function') {
+      throw new Error("Handler must be a function");
+    }
+
+    const processed = await handler(batch);
+    result.push(...processed);
+
+    if (i + batchSize < total) {
+      await delay(delayMs); // wait before next batch
+    }
+  }
+
+  return result;
+};
+
+
 // 1. WHOLESALE SYNC FUNCTION
 const syncWholesale = async () => {
   const variants = await fetchShopifyVariants();
   const inserted = [];
   const skipped = [];
 
-  for (const variant of variants) {
-    const sku = variant.sku?.trim();
+  const processBatch = async (batch) => {
+    const results = [];
 
-    if (!sku) {
-      await SkippedProduct.create({
-        productId: variant.product_id,
-        reason: "Missing SKU",
-        json: variant,
-      });
-      skipped.push({ reason: "Missing SKU", productId: variant.product_id });
-      continue;
+    for (const variant of batch) {
+      const sku = variant.sku?.trim();
+
+      if (!sku) {
+        await SkippedProduct.create({
+          productId: variant.product_id,
+          reason: "Missing SKU",
+          json: variant,
+        });
+        skipped.push({ reason: "Missing SKU", productId: variant.product_id });
+        continue;
+      }
+
+      try {
+        const saved = await Wholesale.findOneAndUpdate(
+          { sku },
+          {
+            inventory_item_id: variant.inventory_item_id,
+            quantity: variant.quantity,
+            sku,
+            product_id: variant.product_id,
+            product_title: variant.product_title,
+            variant_title: variant.variant_title,
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        inserted.push(saved);
+        results.push(saved);
+      } catch (err) {
+        await SkippedProduct.create({
+          productId: variant.product_id,
+          reason: err.message,
+          json: variant,
+        });
+        skipped.push({ sku, reason: err.message });
+      }
     }
 
-    try {
-      const saved = await Wholesale.findOneAndUpdate(
-        { sku },
-        {
-          inventory_item_id: variant.inventory_item_id,
-          quantity: variant.quantity,
-          sku,
-          product_id: variant.product_id,
-          product_title: variant.product_title,
-          variant_title: variant.variant_title,
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
-      inserted.push(saved);
-    } catch (err) {
-      await SkippedProduct.create({
-        productId: variant.product_id,
-        reason: err.message,
-        json: variant,
-      });
-      skipped.push({ sku, reason: err.message });
-    }
-  }
+    return results;
+  };
 
+  await batchProcess(variants, 500, processBatch, 1000);
   return { inserted, skipped };
 };
+
 
 // 2. RETAIL SYNC FUNCTION
 const syncRetail = async () => {
@@ -60,7 +97,10 @@ const syncRetail = async () => {
   const inserted = [];
   const skipped = [];
 
-  for (const variant of variants) {
+  const processBatch = async (batch) => {
+    const results = [];
+
+    for (const variant of batch) {
     const sku = variant.sku?.trim();
 
     if (!sku) {
@@ -70,7 +110,7 @@ const syncRetail = async () => {
         json: variant,
       });
       skipped.push({ reason: "Missing SKU", productId: variant.product_id });
-      continue;
+ continue;;
     }
 
     try {
@@ -87,6 +127,7 @@ const syncRetail = async () => {
         { upsert: true, new: true, setDefaultsOnInsert: true }
       );
       inserted.push(saved);
+      results.push(saved);
     } catch (err) {
       await SkippedProduct.create({
         productId: variant.product_id,
@@ -96,7 +137,9 @@ const syncRetail = async () => {
       skipped.push({ sku, reason: err.message });
     }
   }
-
+ return results;
+};
+  await batchProcess(variants, 500, processBatch, 1000);
   return { inserted, skipped };
 };
 
@@ -106,36 +149,46 @@ const syncFromWholesaleToSync = async () => {
   const inserted = [];
   const failed = [];
 
-  for (const item of retailData) {
-    try {
-      // Check if SKU exists in Wholesale too
-      const wholesaleItem = await Wholesale.findOne({ sku: item.sku });
+  // ✅ Batch handler
+  const processBatch = async (batch) => {
+    const results = [];
 
-      if (!wholesaleItem) {
-        failed.push({ sku: item.sku, error: "SKU not found in Wholesale" });
-        continue;
+    for (const item of batch) {
+      try {
+        const wholesaleItem = await Wholesale.findOne({ sku: item.sku });
+
+        if (!wholesaleItem) {
+          failed.push({ sku: item.sku, error: "SKU not found in Wholesale" });
+          continue;
+        }
+
+        const saved = await Sync.findOneAndUpdate(
+          { sku: item.sku },
+          {
+            sku: item.sku,
+            quantity: item.quantity,
+            product_title: item.product_title,
+            variant_title: item.variant_title,
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        results.push(saved);
+      } catch (err) {
+        failed.push({ sku: item.sku, error: err.message });
       }
-
-      // Insert into Sync only if SKU exists in both
-      const saved = await Sync.findOneAndUpdate(
-        { sku: item.sku },
-        {
-          sku: item.sku,
-          quantity: item.quantity,
-          product_title: item.product_title,
-          variant_title: item.variant_title,
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
-
-      inserted.push(saved);
-    } catch (err) {
-      failed.push({ sku: item.sku, error: err.message });
     }
-  }
+
+    return results;
+  };
+
+  // ✅ Use batchProcess
+  const insertedResults = await batchProcess(retailData, 500, processBatch, 1000);
+  inserted.push(...insertedResults);
 
   return { inserted, failed };
 };
+
 
 // MAIN SYNC CONTROLLER
 const runFullSync = async (req, res) => {
