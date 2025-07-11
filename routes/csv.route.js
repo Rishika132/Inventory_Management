@@ -3,7 +3,7 @@ const multer = require('multer');
 // const { auth } = require ("../middleware/auth.js");
 const { handleCSVUpload } = require('../controller/csv.controller');
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: '/tmp' });
 
 const router = express.Router();
 
