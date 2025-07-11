@@ -72,7 +72,7 @@ const fetchUsers = async(request , response)=>{
 const deleteUser = async(request , response)=>{
     Login.deleteOne({_id:request.params.id})
     .then(result=>{
-        return response.status(200).json("User deleted !");
+        return response.status(200).json("User deleted successfully !");
     }).catch(err =>{
         return response.status(500).json({error: "Internal Server Error"});
     });
@@ -88,7 +88,7 @@ const updateUser = async(request , response)=>{
 
   Login.findByIdAndUpdate(id, updatedData, { new: true })
     .then(updatedUser => {
-      return response.status(200).json({ message: "User updated", user: updatedUser });
+      return response.status(200).json({ message: "User edit successfully !", user: updatedUser });
     })
     .catch(err => {
       console.error(err);

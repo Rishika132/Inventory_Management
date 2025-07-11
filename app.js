@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const LoginRouter = require("./routes/login.route");
 const cors = require("cors");
+const path = require('path');
 const cookieParser = require("cookie-parser");
 const WebhookRouter = require("./routes/webhook.route");
 const SyncRouter = require("./routes/sync.route");
@@ -34,7 +35,9 @@ mongoose.connect(process.env.MONGODB_URI)
           app.use("/api",PageRouter);
           app.use("/update",UpdateRouter);
           app.use('/api', CSVRouter);
-        app.use("/",ExportRouter);  
+     app.use('/exports', express.static(path.join(__dirname, 'public/exports')));
+app.use("/", ExportRouter);
+
 
 
         app.listen(3000, () => {
