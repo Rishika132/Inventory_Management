@@ -13,7 +13,7 @@ const login = async (request, response) => {
         if (user.password === password) {
         user.password = undefined;
        const jwt = require("jsonwebtoken");
-
+ role=user.role;
 let payload = { currentUser: user._id };
 
 const token = jwt.sign( payload, process.env.JWT_SECRET || "dflfdkjreiwreriovnxvmnvxcm@#12fdfre#" );
@@ -24,7 +24,7 @@ response.cookie("token", token, {
   // secure: true  // Optional: use this in production with HTTPS
 });
 
-return response.status(200).json({message: "Sign In Success",token,user});
+return response.status(200).json({message: "Sign In Success",token,role});
 
     }
 

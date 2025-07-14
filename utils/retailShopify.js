@@ -32,3 +32,25 @@ const graphqlRequest = async (payload) => {
 };
 
 module.exports = { graphqlRequest };
+
+// require("dotenv").config();
+// const Shopify = require("shopify-api-node");
+
+// const shopify = new Shopify({
+//   shopName: process.env.SHOPIFY_STORES,
+//   accessToken: process.env.SHOPIFY_ACCESS_TOKEN_STORE,
+// });
+
+// const graphqlRequest = async ({ query, variables = {} }) => {
+//   try {
+//     const response = await shopify.graphql(query, variables);
+//     return { data: JSON.parse(response) };
+//   } catch (error) {
+//     console.error("❌ GraphQL Error:", error?.response?.errors || error.message);
+//     return { error };
+//   }
+// };
+
+// module.exports = {
+//   graphqlRequest,
+// };
