@@ -7,33 +7,46 @@ const fetchRetailVariants = async () => {
 
   try {
     while (hasNextPage) {
-      const query = `
-        {
-          products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
-            pageInfo { hasNextPage }
+    const query = `
+  {
+    products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
+      pageInfo { hasNextPage }
+      edges {
+        cursor
+        node {
+          id
+          title
+              images(first: 1) {
+          edges {
+            node {
+              url
+              altText
+            }
+          }
+        }
+          variants(first: 10) {
             edges {
-              cursor
               node {
                 id
                 title
-                variants(first: 100) {
-                  edges {
-                    node {
-                      id
-                      title
-                      sku
-                      inventoryQuantity
-                      inventoryItem {
-                        id
-                      }
-                    }
-                  }
+                sku
+                price
+                inventoryQuantity
+                inventoryItem {
+                  id
+                }
+                image {
+                  originalSrc
+                  altText
                 }
               }
             }
           }
         }
-      `;
+      }
+    }
+  }
+`;
 
       console.log("🔄 Sending GraphQL query to Shopify...");
       const result = await graphqlRequest({ query });
@@ -60,7 +73,10 @@ const fetchRetailVariants = async () => {
             quantity: qty,
             product_id: product.id,
             product_title: product.title,
+          product_image: product.images?.edges?.[0]?.node?.url,
             variant_title: variant.title,
+            variant_price: variant.price,
+            variant_image: variant.image?.originalSrc
           });
         }
       }

@@ -21,7 +21,6 @@ const token = jwt.sign( payload, process.env.JWT_SECRET || "dflfdkjreiwreriovnxv
 response.cookie("token", token, {
   httpOnly: true,
   sameSite: "strict",
-  // secure: true  // Optional: use this in production with HTTPS
 });
 
 return response.status(200).json({message: "Sign In Success",token,role});

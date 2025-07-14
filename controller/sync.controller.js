@@ -60,7 +60,10 @@ const syncWholesale = async () => {
             sku,
             product_id: variant.product_id,
             product_title: variant.product_title,
+            product_image:variant.product_image,
             variant_title: variant.variant_title,
+            variant_price: variant.variant_price,
+            variant_image:variant.variant_image
           },
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
@@ -109,7 +112,10 @@ const syncRetail = async () => {
             sku,
             product_id: variant.product_id,
             product_title: variant.product_title,
+             product_image:variant.product_image,
             variant_title: variant.variant_title,
+            variant_price: variant.variant_price,
+            variant_image:variant.variant_image
           },
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
@@ -133,26 +139,50 @@ const syncRetail = async () => {
 
 // SYNC WHOLESALE ➡ SYNC COLLECTION
 const syncFromWholesaleToSync = async () => {
-  const retailData = await Retail.find();
+  const [retailData, wholesaleData] = await Promise.all([
+    Retail.find(),
+    Wholesale.find()
+  ]);
   const failed = [];
+
+  const skuMap = new Map();
+
+  // Add Retail items (will take priority)
+  for (const item of retailData) {
+    skuMap.set(item.sku, {
+      sku: item.sku,
+      quantity: item.quantity,
+      product_title: item.product_title,
+       product_image:item.product_image,
+      variant_title: item.variant_title,
+      variant_price: item.variant_price,
+      variant_image:item.variant_image
+    });
+  }
+
+  // Add Wholesale items only if SKU doesn't already exist
+  for (const item of wholesaleData) {
+    if (!skuMap.has(item.sku)) {
+      skuMap.set(item.sku, {
+        sku: item.sku,
+        quantity: item.quantity,
+        product_title: item.product_title,
+          product_image:item.product_image,
+        variant_title: item.variant_title,
+        variant_price: item.variant_price,
+        variant_image:item.variant_image
+      });
+    }
+  }
+
+  const mergedData = Array.from(skuMap.values());
 
   const processBatch = async (batch) => {
     const results = await Promise.all(batch.map(async (item) => {
       try {
-        const wholesaleItem = await Wholesale.findOne({ sku: item.sku });
-        if (!wholesaleItem) {
-          failed.push({ sku: item.sku, error: "SKU not found in Wholesale" });
-          return null;
-        }
-
         return await Sync.findOneAndUpdate(
           { sku: item.sku },
-          {
-            sku: item.sku,
-            quantity: item.quantity,
-            product_title: item.product_title,
-            variant_title: item.variant_title,
-          },
+          item,
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
       } catch (err) {
@@ -164,9 +194,10 @@ const syncFromWholesaleToSync = async () => {
     return results.filter(Boolean);
   };
 
-  const batches = await batchProcess(retailData, 1000, processBatch, 0);
+  const batches = await batchProcess(mergedData, 1000, processBatch, 0);
   return { batches, failed };
 };
+
 
 // MAIN SYNC CONTROLLER
 const runFullSync = async (req, res) => {
