@@ -1,12 +1,12 @@
 require("dotenv").config();
 
-const Shopify = require("shopify-api-node");
+const { shopifyApi} = require('@shopify/shopify-api');
 
-const shopify = new Shopify({
+const shopify = new shopifyApi({
   shopName: process.env.SHOPIFY_STORES,
   accessToken: process.env.SHOPIFY_ACCESS_TOKEN_STORE,
 });
 
 
 
-module.exports = { shopify };
+module.exports = shopify.admin;

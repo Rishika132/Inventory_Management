@@ -24,7 +24,7 @@ response.cookie("token", token, {
   // secure: true  // Optional: use this in production with HTTPS
 });
 
-return response.status(200).json({message: "Sign In Success",token});
+return response.status(200).json({message: "Sign In Success",token,user});
 
     }
 
