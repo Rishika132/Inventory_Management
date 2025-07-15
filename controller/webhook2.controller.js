@@ -1,4 +1,4 @@
-
+const Order = require("../model/order.model");
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
@@ -7,7 +7,8 @@ const { setShopifyInventory } = require("../utils/update");
 const Webhook2 = async (req, res) => {
   try {
     const order = req.body;
-    console.log("🔔 financial_status:", order.financial_status);
+    const storeName = req.headers["x-shopify-shop-domain"] || null;
+      const orderId = String(order.id);
 
     const isRefund = order.refunds && order.refunds.length > 0;
 
@@ -57,6 +58,8 @@ const Webhook2 = async (req, res) => {
 
       console.log(`✅ SKU ${sku} ${isRefund ? 'restocked (refund)' : 'sold'}. New Qty: ${newQty}`);
     }
+
+      await Order.deleteMany({ order_id: orderId, store_name: storeName });
 
     return res.status(200).json({
       message: `✅ Inventory ${isRefund ? 'restocked (refund)' : 'synced (sale)'}`,
