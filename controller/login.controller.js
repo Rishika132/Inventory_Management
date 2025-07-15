@@ -5,6 +5,8 @@ const login = async (request, response) => {
 
     try {
         let { email, password } = request.body;
+         password=request.body.password;
+         
         let user = await Login.findOne({ email });
 
         if (!user) {
@@ -16,7 +18,7 @@ const login = async (request, response) => {
  role=user.role;
  id=user._id;
  email=user.email;
- password=user.password;
+
 let payload = { currentUser: user._id };
 
 const token = jwt.sign( payload, process.env.JWT_SECRET || "dflfdkjreiwreriovnxvmnvxcm@#12fdfre#" );
@@ -25,6 +27,7 @@ response.cookie("token", token, {
   httpOnly: true,
   sameSite: "strict",
 });
+
 
 return response.status(200).json({message: "Sign In Success",token,role,id,email,password});
 
