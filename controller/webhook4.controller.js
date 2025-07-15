@@ -42,44 +42,35 @@ const Webhook4 = async (req, res) => {
 };
 
 
-// const Sync = require("../model/sync.model");
+// // const Sync = require("../model/sync.model");
 
-const OrderDeleted2 = async (req, res) => {
-  try {
-    const order = req.body;
-    const orderId = String(order.id);
+// const OrderDeleted2 = async (req, res) => {
+//   try {
+//     const order = req.body;
+//     const orderId = String(order.id);
 
-    // 1. Find all order items with this order_id
-    const orderItems = await Order.find({ order_id: orderId });
-    console.log(orderItems);
+//     // 1. Find all order items with this order_id
+//     const orderItems = await Order.find({ order_id: orderId });
+//     console.log(orderItems);
 
-    if (!orderItems.length) {
-      return res.status(404).json({ message: "No order items found to reverse" });
-    }
+//     if (!orderItems.length) {
+//       return res.status(404).json({ message: "No order items found to reverse" });
+//     }
 
-    const updated = [];
+//     const updated = [];
 
-    for (const item of orderItems) {
-      const { sku, quantity } = item;
+//     for (const item of orderItems) {
+//       const { sku, quantity } = item;
 
-      // // 2. Update Sync quantity (or Retail/Wholesale)
-      // const syncItem = await Sync.findOne({ sku });
-      // if (syncItem) {
-      //   syncItem.quantity += quantity;
-      //   await syncItem.save();
-      //   updated.push({ sku, restored_quantity: quantity, new_quantity: syncItem.quantity });
-      // }
+//       await Order.deleteOne({ order_id: orderId });
+//     }
 
-      // 3. Delete the order line item entry
-      await Order.deleteOne({ _id: item._id });
-    }
-
-    return res.status(200).json({ message: "✅ Order deletion handled", updated });
-  } catch (err) {
-    console.error("❌ Order delete webhook error:", err.message);
-    return res.status(500).json({ error: "Failed to handle order deletion" });
-  }
-};
+//     return res.status(200).json({ message: "✅ Order deletion handled", updated });
+//   } catch (err) {
+//     console.error("❌ Order delete webhook error:", err.message);
+//     return res.status(500).json({ error: "Failed to handle order deletion" });
+//   }
+// };
 
 
-module.exports = { Webhook4 ,OrderDeleted2 };
+module.exports = { Webhook4 };
