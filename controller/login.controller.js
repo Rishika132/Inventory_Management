@@ -14,6 +14,7 @@ const login = async (request, response) => {
         user.password = undefined;
        const jwt = require("jsonwebtoken");
  role=user.role;
+ id=user._id;
 let payload = { currentUser: user._id };
 
 const token = jwt.sign( payload, process.env.JWT_SECRET || "dflfdkjreiwreriovnxvmnvxcm@#12fdfre#" );
@@ -23,7 +24,7 @@ response.cookie("token", token, {
   sameSite: "strict",
 });
 
-return response.status(200).json({message: "Sign In Success",token,role});
+return response.status(200).json({message: "Sign In Success",token,role,id});
 
     }
 
