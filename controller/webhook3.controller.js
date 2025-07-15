@@ -91,8 +91,7 @@ const OrderDeleted = async (req, res) => {
       updated.push(log);
 
       // Delete the order item
-      await Order.deleteOne({ _id: item._id });
-    }
+    await Order.deleteMany({ order_id: orderId });    }
 
     return res.status(200).json({ message: "✅ Order deletion handled", updated });
   } catch (err) {

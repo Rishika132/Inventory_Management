@@ -42,17 +42,16 @@ const Webhook4 = async (req, res) => {
 };
 
 
-// Order-delete
-const Sync = require("../model/sync.model");
-const Wholesale = require("../model/wholesale.model");
-const Retail = require("../model/retail.model");
+// const Sync = require("../model/sync.model");
 
 const OrderDeleted2 = async (req, res) => {
   try {
     const order = req.body;
     const orderId = String(order.id);
 
+    // 1. Find all order items with this order_id
     const orderItems = await Order.find({ order_id: orderId });
+    console.log(orderItems);
 
     if (!orderItems.length) {
       return res.status(404).json({ message: "No order items found to reverse" });
@@ -63,35 +62,15 @@ const OrderDeleted2 = async (req, res) => {
     for (const item of orderItems) {
       const { sku, quantity } = item;
 
-      const log = { sku, restored_quantity: quantity };
+      // // 2. Update Sync quantity (or Retail/Wholesale)
+      // const syncItem = await Sync.findOne({ sku });
+      // if (syncItem) {
+      //   syncItem.quantity += quantity;
+      //   await syncItem.save();
+      //   updated.push({ sku, restored_quantity: quantity, new_quantity: syncItem.quantity });
+      // }
 
-      // Update Sync
-      const syncItem = await Sync.findOne({ sku });
-      if (syncItem) {
-        syncItem.quantity += quantity;
-        await syncItem.save();
-        log.sync_quantity = syncItem.quantity;
-      }
-
-      // Update Wholesale
-      const wholesaleItem = await Wholesale.findOne({ sku });
-      if (wholesaleItem) {
-        wholesaleItem.quantity += quantity;
-        await wholesaleItem.save();
-        log.wholesale_quantity = wholesaleItem.quantity;
-      }
-
-      // Update Retail
-      const retailItem = await Retail.findOne({ sku });
-      if (retailItem) {
-        retailItem.quantity += quantity;
-        await retailItem.save();
-        log.retail_quantity = retailItem.quantity;
-      }
-
-      updated.push(log);
-
-      // Delete the order item
+      // 3. Delete the order line item entry
       await Order.deleteOne({ _id: item._id });
     }
 
@@ -101,5 +80,6 @@ const OrderDeleted2 = async (req, res) => {
     return res.status(500).json({ error: "Failed to handle order deletion" });
   }
 };
+
 
 module.exports = { Webhook4 ,OrderDeleted2 };
