@@ -8,7 +8,7 @@ const Webhook = async (req, res) => {
   try {
       const order = req.body;
       const storeName = req.headers["x-shopify-shop-domain"] || null;
-      const orderId = String(order.id);
+      const orderId = String(order.name);
 
     const isRefund = order.refunds && order.refunds.length > 0;
 

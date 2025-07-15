@@ -1,133 +1,133 @@
-{
-  id: 6624701349943,
-  admin_graphql_api_id: 'gid://shopify/Order/6624701349943',
+2025-07-15T07:49:16.580Z [info] {
+  id: 11496628257139,
+  admin_graphql_api_id: 'gid://shopify/Order/11496628257139',
   app_id: 580111,
-  browser_ip: '2401:4900:1ca2:bd1d:2c5b:acc2:b515:e170',
+  browser_ip: '14.195.73.178',
   buyer_accepts_marketing: false,
   cancel_reason: null,
   cancelled_at: null,
-  cart_token: 'Z2NwLWFzaWEtc291dGhlYXN0MTowMUpaUFo0WjNQNEo1ODM0U1RCOENXMDdLUg',
-  checkout_id: 46617226936375,
-  checkout_token: 'b65b6c0b075db099b832442e63ce110e',
+  cart_token: 'Z2NwLXVzLWNlbnRyYWwxOjAxSzA2R1hQQUpUSjBETTBHUEozUzY4N1My',
+  checkout_id: 64091505721715,
+  checkout_token: 'ba66edcf018c33a29287aa28b1861573',
   client_details: {
     accept_language: 'en-US',
     browser_height: null,
-    browser_ip: '2401:4900:1ca2:bd1d:2c5b:acc2:b515:e170',
+    browser_ip: '14.195.73.178',
     browser_width: null,
     session_hash: null,
-    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
+    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
   },
   closed_at: null,
   company: null,
-  confirmation_number: 'J4KUWDJUP',
+  confirmation_number: '8IV8NIE5Z',
   confirmed: true,
   contact_email: 'testing@yopmail.com',
-  created_at: '2025-07-09T02:50:18-04:00',
-  currency: 'INR',
+  created_at: '2025-07-15T03:49:13-04:00',
+  currency: 'USD',
   current_shipping_price_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
+    shop_money: { amount: '0.00', currency_code: 'USD' },
     presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
-  current_subtotal_price: '686.95',
+  current_subtotal_price: '0.00',
   current_subtotal_price_set: {
-    shop_money: { amount: '686.95', currency_code: 'INR' },
-    presentment_money: { amount: '8.00', currency_code: 'USD' }
+    shop_money: { amount: '0.00', currency_code: 'USD' },
+    presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   current_total_additional_fees_set: null,
-  current_total_discounts: '0.00',
+  current_total_discounts: '19.98',
   current_total_discounts_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
-    presentment_money: { amount: '0.00', currency_code: 'USD' }
+    shop_money: { amount: '19.98', currency_code: 'USD' },
+    presentment_money: { amount: '19.98', currency_code: 'USD' }
   },
   current_total_duties_set: null,
-  current_total_price: '686.95',
+  current_total_price: '0.00',
   current_total_price_set: {
-    shop_money: { amount: '686.95', currency_code: 'INR' },
-    presentment_money: { amount: '8.00', currency_code: 'USD' }
+    shop_money: { amount: '0.00', currency_code: 'USD' },
+    presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   current_total_tax: '0.00',
   current_total_tax_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
+    shop_money: { amount: '0.00', currency_code: 'USD' },
     presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   customer_locale: 'en-US',
   device_id: null,
-  discount_codes: [],
+  discount_codes: [ { code: 'THTAXZB1DZN6', amount: '19.98', type: 'percentage' } ],
   duties_included: false,
   email: 'testing@yopmail.com',
   estimated_taxes: false,
-  financial_status: 'authorized',
+  financial_status: 'paid',
   fulfillment_status: null,
-  landing_site: '/online_store_preview',
+  landing_site: null,
   landing_site_ref: null,
   location_id: null,
-  merchant_business_entity_id: 'MTI1MzExOTAzNzk5',
+  merchant_business_entity_id: 'MTkwOTAyMDY5NjE5',
   merchant_of_record_app_id: null,
-  name: '#1058',
+  name: '#1068',
   note: null,
   note_attributes: [],
-  number: 58,
-  order_number: 1058,
-  order_status_url: 'https://mokee-testing.myshopify.com/25311903799/orders/fdd96b505f0972189d01d3c8648b27c7/authenticate?key=1910d7bd743a9b2d65a34f07c44cec79',
+  number: 68,
+  order_number: 1068,
+  order_status_url: 'https://team-gamma.myshopify.com/90902069619/orders/6b36fff6fd00691e00799d15c9e3afaa/authenticate?key=26c2c82bb5e865d41c505658405c57ab',
   original_total_additional_fees_set: null,
   original_total_duties_set: null,
-  payment_gateway_names: [ 'bogus' ],
+  payment_gateway_names: [],
   phone: null,
   po_number: null,
   presentment_currency: 'USD',
-  processed_at: '2025-07-09T02:50:15-04:00',
+  processed_at: '2025-07-15T03:49:10-04:00',
   reference: null,
-  referring_site: 'https://admin.shopify.com/',
+  referring_site: null,
   source_identifier: null,
   source_name: 'web',
   source_url: null,
-  subtotal_price: '686.95',
+  subtotal_price: '0.00',
   subtotal_price_set: {
-    shop_money: { amount: '686.95', currency_code: 'INR' },
-    presentment_money: { amount: '8.00', currency_code: 'USD' }
+    shop_money: { amount: '0.00', currency_code: 'USD' },
+    presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   tags: '',
   tax_exempt: false,
   tax_lines: [],
-  taxes_included: true,
-  test: true,
-  token: 'fdd96b505f0972189d01d3c8648b27c7',
+  taxes_included: false,
+  test: false,
+  token: '6b36fff6fd00691e00799d15c9e3afaa',
   total_cash_rounding_payment_adjustment_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
+    shop_money: { amount: '0.00', currency_code: 'USD' },
     presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   total_cash_rounding_refund_adjustment_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
+    shop_money: { amount: '0.00', currency_code: 'USD' },
     presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
-  total_discounts: '0.00',
+  total_discounts: '19.98',
   total_discounts_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
-    presentment_money: { amount: '0.00', currency_code: 'USD' }
+    shop_money: { amount: '19.98', currency_code: 'USD' },
+    presentment_money: { amount: '19.98', currency_code: 'USD' }
   },
-  total_line_items_price: '686.95',
+  total_line_items_price: '19.98',
   total_line_items_price_set: {
-    shop_money: { amount: '686.95', currency_code: 'INR' },
-    presentment_money: { amount: '8.00', currency_code: 'USD' }
+    shop_money: { amount: '19.98', currency_code: 'USD' },
+    presentment_money: { amount: '19.98', currency_code: 'USD' }
   },
   total_outstanding: '0.00',
-  total_price: '686.95',
+  total_price: '0.00',
   total_price_set: {
-    shop_money: { amount: '686.95', currency_code: 'INR' },
-    presentment_money: { amount: '8.00', currency_code: 'USD' }
+    shop_money: { amount: '0.00', currency_code: 'USD' },
+    presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   total_shipping_price_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
+    shop_money: { amount: '0.00', currency_code: 'USD' },
     presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   total_tax: '0.00',
   total_tax_set: {
-    shop_money: { amount: '0.00', currency_code: 'INR' },
+    shop_money: { amount: '0.00', currency_code: 'USD' },
     presentment_money: { amount: '0.00', currency_code: 'USD' }
   },
   total_tip_received: '0.00',
-  total_weight: 186,
-  updated_at: '2025-07-09T02:50:19-04:00',
+  total_weight: 145,
+  updated_at: '2025-07-15T03:49:14-04:00',
   user_id: null,
   billing_address: {
     first_name: 'test',
@@ -147,10 +147,10 @@
     province_code: 'CA'
   },
   customer: {
-    id: 7930191872055,
+    id: 23145513025907,
     email: 'testing@yopmail.com',
-    created_at: '2025-07-09T02:44:38-04:00',
-    updated_at: '2025-07-09T02:50:18-04:00',
+    created_at: '2025-07-07T03:04:50-04:00',
+    updated_at: '2025-07-15T03:49:13-04:00',
     first_name: 'test',
     last_name: 'test',
     state: 'disabled',
@@ -159,12 +159,12 @@
     multipass_identifier: null,
     tax_exempt: false,
     phone: null,
-    currency: 'INR',
+    currency: 'USD',
     tax_exemptions: [],
-    admin_graphql_api_id: 'gid://shopify/Customer/7930191872055',
+    admin_graphql_api_id: 'gid://shopify/Customer/23145513025907',
     default_address: {
-      id: 9134883373111,
-      customer_id: 7930191872055,
+      id: 34571742577011,
+      customer_id: 23145513025907,
       first_name: 'test',
       last_name: 'test',
       company: null,
@@ -182,40 +182,50 @@
       default: true
     }
   },
-  discount_applications: [],
+  discount_applications: [
+    {
+      target_type: 'line_item',
+      type: 'discount_code',
+      value: '100.0',
+      value_type: 'percentage',
+      allocation_method: 'each',
+      target_selection: 'entitled',
+      code: 'THTAXZB1DZN6'
+    }
+  ],
   fulfillments: [],
   line_items: [
     {
-      id: 15489558118455,
-      admin_graphql_api_id: 'gid://shopify/LineItem/15489558118455',
+      id: 34436243292531,
+      admin_graphql_api_id: 'gid://shopify/LineItem/34436243292531',
       attributed_staffs: [],
       current_quantity: 1,
       fulfillable_quantity: 1,
       fulfillment_service: 'manual',
       fulfillment_status: null,
       gift_card: false,
-      grams: 186,
-      name: 'Dealer Exclusives, Volume 3',
-      price: '686.95',
+      grams: 144,
+      name: 'Berry Sweet Mug Rugs Project Kit',
+      price: '19.98',
       price_set: [Object],
       product_exists: true,
-      product_id: 7313391124535,
-      properties: [Array],
+      product_id: 15123974848883,
+      properties: [],
       quantity: 1,
       requires_shipping: true,
       sales_line_item_group_id: null,
-      sku: 'KDEX103',
+      sku: 'KMEK1001',
       taxable: true,
-      title: 'Dealer Exclusives, Volume 3',
+      title: 'Berry Sweet Mug Rugs Project Kit',
       total_discount: '0.00',
       total_discount_set: [Object],
-      variant_id: 41766399180855,
+      variant_id: 52719564161395,
       variant_inventory_management: 'shopify',
       variant_title: null,
       vendor: 'Kimberbell',
       tax_lines: [],
       duties: [],
-      discount_allocations: []
+      discount_allocations: [Array]
     }
   ],
   payment_terms: null,
@@ -239,9 +249,9 @@
   },
   shipping_lines: [
     {
-      id: 5501254205495,
+      id: 10723943285107,
       carrier_identifier: null,
-      code: 'Flat',
+      code: 'free',
       current_discounted_price_set: [Object],
       discounted_price: '0.00',
       discounted_price_set: [Object],
@@ -251,7 +261,7 @@
       price_set: [Object],
       requested_fulfillment_service_id: null,
       source: 'shopify',
-      title: 'Flat',
+      title: 'free',
       tax_lines: [],
       discount_allocations: []
     }
