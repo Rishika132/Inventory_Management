@@ -8,6 +8,6 @@ const {getOrder} = require("../controller/order.controller.js");
 
 router.get("/syncpage",auth, getSyncData); 
 
-router.get("/orderpage",getOrder);
+router.get("/orderpage",auth,getOrder);
 
 module.exports = router;
