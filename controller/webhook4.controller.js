@@ -19,16 +19,15 @@ const Webhook4 = async (req, res) => {
 
       if (!sku || !quantity || !variant_title || !orderId) continue;
 
-      const saved = await Order.insertMany(
-       
-        {
-          sku,
-          quantity,
-          variant_title,
-          order_id: String(orderId),
-          store_name: storeName,
-        }
-      );
+     const newOrder = new Order({
+        sku,
+        quantity,
+        variant_title,
+        order_id: orderId,
+        store_name: storeName,
+      });
+
+      const saved = await newOrder.save();
 
       inserted.push(saved);
     }
@@ -39,37 +38,6 @@ const Webhook4 = async (req, res) => {
     return res.status(500).json({ error: "Failed to handle webhook" });
   }
 };
-
-
-// // const Sync = require("../model/sync.model");
-
-// const OrderDeleted2 = async (req, res) => {
-//   try {
-//     const order = req.body;
-//     const orderId = String(order.id);
-
-//     // 1. Find all order items with this order_id
-//     const orderItems = await Order.find({ order_id: orderId });
-//     console.log(orderItems);
-
-//     if (!orderItems.length) {
-//       return res.status(404).json({ message: "No order items found to reverse" });
-//     }
-
-//     const updated = [];
-
-//     for (const item of orderItems) {
-//       const { sku, quantity } = item;
-
-//       await Order.deleteOne({ order_id: orderId });
-//     }
-
-//     return res.status(200).json({ message: "✅ Order deletion handled", updated });
-//   } catch (err) {
-//     console.error("❌ Order delete webhook error:", err.message);
-//     return res.status(500).json({ error: "Failed to handle order deletion" });
-//   }
-// };
 
 
 module.exports = { Webhook4 };
