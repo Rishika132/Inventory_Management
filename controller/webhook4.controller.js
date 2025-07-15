@@ -19,16 +19,15 @@ const Webhook4 = async (req, res) => {
 
       if (!sku || !quantity || !variant_title || !orderId) continue;
 
-      const saved = await Order.findOneAndUpdate(
-        { sku },
+      const saved = await Order.insertMany(
+       
         {
           sku,
           quantity,
           variant_title,
           order_id: String(orderId),
           store_name: storeName,
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        }
       );
 
       inserted.push(saved);
