@@ -4,7 +4,7 @@ const Order = require("../model/order.model");
 const Webhook3 = async (req, res) => {
   try {
     const order = req.body;
-
+console.log(order);
     const orderId = order.id;
     const storeName = req.headers["x-shopify-shop-domain"] || null;
 
@@ -18,7 +18,7 @@ const Webhook3 = async (req, res) => {
       const variant_title = item.title;
 
       if (!sku || !quantity || !variant_title || !orderId) continue;
-      
+
  const newOrder = new Order({
         sku,
         quantity,

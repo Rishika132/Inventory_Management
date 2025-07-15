@@ -4,7 +4,7 @@ const Order = require("../model/order.model");
 const Webhook4 = async (req, res) => {
   try {
     const order = req.body;
-
+console.log(order);
     const orderId = order.id;
     const storeName = req.headers["x-shopify-shop-domain"] || null;
 
