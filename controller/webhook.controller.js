@@ -1,4 +1,4 @@
-
+const Order = require("../model/order.model");
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
@@ -7,7 +7,8 @@ const { setRetailShopifyInventory } = require("../utils/updateStore");
 const Webhook = async (req, res) => {
   try {
       const order = req.body;
-    console.log("🔔 financial_status:", order.financial_status);
+      const storeName = req.headers["x-shopify-shop-domain"] || null;
+      const orderId = String(order.id);
 
     const isRefund = order.refunds && order.refunds.length > 0;
 
@@ -58,7 +59,9 @@ const Webhook = async (req, res) => {
       console.log(`✅ SKU ${sku} updated. New Qty: ${newQty}`);
     }
 
-    return res.status(200).json({ message: "✅ Order sync complete" });
+      await Order.deleteMany({ order_id: orderId, store_name: storeName });
+
+    return res.status(200).json({ message: "✅ Order sync complete and order deleted" });
   } catch (err) {
     console.error("❌ Webhook error:", err.message);
     return res.status(500).json({ error: "Webhook processing failed" });
