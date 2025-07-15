@@ -1,7 +1,8 @@
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
-const SkippedProduct = require("../model/skipped.model");
+const SkippedProduct = require("../model/skipped.model"); 
+const {sendThresholdEmails} = require("./nodemailer");
 
 const { fetchShopifyVariants } = require("../utils/wholesaleproduct");
 const { fetchRetailVariants } = require("../utils/retailproduct");
@@ -205,6 +206,8 @@ const runFullSync = async (req, res) => {
     const wholesaleResult = await syncWholesale();
     const retailResult = await syncRetail();
     const syncResult = await syncFromWholesaleToSync();
+
+    await sendThresholdEmails();
 
     return res.status(200).json({
       message: "✅ Full sync completed successfully",
