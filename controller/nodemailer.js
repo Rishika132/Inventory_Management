@@ -1,8 +1,4 @@
 
-
-
-
-
 const nodemailer = require("nodemailer");
 const Sync = require("../model/sync.model");
 

@@ -5,7 +5,7 @@ const Webhook4 = async (req, res) => {
   try {
     const order = req.body;
 
-    const orderId = order.id;
+    const orderId = order.name;
     const storeName = req.headers["x-shopify-shop-domain"] || null;
 
     const lineItems = order.line_items || [];
@@ -25,7 +25,7 @@ const Webhook4 = async (req, res) => {
           sku,
           quantity,
           variant_title,
-          order_id: String(orderId),
+          order_id: orderId,
           store_name: storeName,
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
