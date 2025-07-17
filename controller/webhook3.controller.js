@@ -20,17 +20,15 @@ const Webhook3 = async (req, res) => {
 
       if (!sku || !quantity || !variant_title || !orderId) continue;
 
-      const saved = await Order.findOneAndUpdate(
-        { sku },
-        {
-          sku,
-          quantity,
-          variant_title,
-          order_id:  order.name,
-          store_name: storeName,
-        },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
+      const newOrder = new Order({
+             sku,
+             quantity,
+             variant_title,
+             order_id: order.name,
+             store_name: storeName,
+           });
+     
+           const saved = await newOrder.save();
 
       inserted.push(saved);
     }
