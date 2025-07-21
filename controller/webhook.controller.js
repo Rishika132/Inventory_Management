@@ -50,18 +50,14 @@ const Webhook = async (req, res) => {
       await Retail.updateOne({ sku }, { quantity: newQty });
       
       await Sync.updateOne({ sku }, { quantity: newQty });
-     
-      // ✅ Update Shopify inventory
+
       await setRetailShopifyInventory(inventoryId, newQty);
 
-    
-
-      console.log(`✅ SKU ${sku} updated. New Qty: ${newQty}`);
     }
 
       await Order.deleteMany({ order_id: orderId, store_name: storeName });
 
-    return res.status(200).json({ message: "✅ Order sync complete and order deleted" });
+    return res.status(200).json({ message: " Order sync complete and order deleted" });
   } catch (err) {
     console.error("❌ Webhook error:", err.message);
     return res.status(500).json({ error: "Webhook processing failed" });
