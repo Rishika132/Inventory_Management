@@ -9,13 +9,14 @@ const handleCSVUpload = (req, res) => {
     .pipe(csv())
     .on('data', (row) => {
       // Ensure required fields exist
-      if (row.SKU && row.Quantity && row.Threshold) {
-        records.push({
-          sku: row.SKU.trim(),
-          quantity: parseInt(row.Quantity.trim(), 10),
-          threshold: parseInt(row.Threshold.trim(), 10)
-        });
-      }
+     if ((row.SKU || row.sku) && (row.Quantity || row.quantity) && (row.Threshold || row.threshold)) {
+  records.push({
+    sku: (row.SKU || row.sku).trim(),
+    quantity: parseInt((row.Quantity || row.quantity).trim(), 10),
+    threshold: parseInt((row.Threshold || row.threshold).trim(), 10)
+  });
+}
+
     })
     .on('end', async () => {
       fs.unlinkSync(filePath); // delete the uploaded file

@@ -250,9 +250,21 @@ const runFullSync = async (req, res) => {
   }
 };
 
+
+const fetchProducts = async (request, response) => {
+    Sync.find()
+        .then(result => {
+            return response.status(200).json({products: result });
+        }).catch(err => {
+            return response.status(500).json({ error: "Internal Server Error" });
+        });
+}
+
 module.exports = {
   runFullSync,
   syncWholesale,
   syncRetail,
   syncFromWholesaleToSync,
+  fetchProducts
 };
+
