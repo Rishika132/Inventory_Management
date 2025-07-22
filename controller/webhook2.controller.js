@@ -29,7 +29,7 @@ const Webhook2 = async (req, res) => {
 
       const wholesaleProduct = await Wholesale.findOne({ sku });
       if (!wholesaleProduct) {
-        console.warn(`❌ SKU ${sku} not found in Wholesale`);
+        console.warn(` SKU ${sku} not found in Wholesale`);
         continue;
       }
 
@@ -37,7 +37,7 @@ const Webhook2 = async (req, res) => {
       const currentQty = wholesaleProduct.quantity || 0;
 
       if (!inventoryId) {
-        console.warn(`⚠️ Inventory ID missing for SKU ${sku}`);
+        console.warn(` Inventory ID missing for SKU ${sku}`);
         continue;
       }
 
@@ -55,17 +55,16 @@ const Webhook2 = async (req, res) => {
 
 
       await setShopifyInventory(inventoryId, newQty);
-
-      console.log(`✅ SKU ${sku} ${isRefund ? 'restocked (refund)' : 'sold'}. New Qty: ${newQty}`);
+      console.log(` SKU ${sku} ${isRefund ? 'restocked (refund)' : 'sold'}. New Qty: ${newQty}`);
     }
 
       await Order.deleteMany({ order_id: orderId, store_name: storeName });
 
     return res.status(200).json({
-      message: `✅ Inventory ${isRefund ? 'restocked (refund)' : 'synced (sale)'}`,
+      message: ` Inventory ${isRefund ? 'restocked (refund)' : 'synced (sale)'}`,
     });
   } catch (err) {
-    console.error("❌ Webhook error:", err.message);
+    console.error(" Webhook error:", err.message);
     return res.status(500).json({ error: "Webhook processing failed" });
   }
 };

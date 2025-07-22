@@ -1,6 +1,4 @@
-
 const { graphqlRequest } = require("./Shopify");
-
 const fetchShopifyVariants = async () => {
   const variants = [];
   let hasNextPage = true;
@@ -49,14 +47,13 @@ const fetchShopifyVariants = async () => {
   }
 `;
 
-      console.log("🔄 Sending GraphQL query to Shopify...");
+      console.log(" Sending GraphQL query to Shopify...");
  const result = await graphqlRequest({ query });
 
-      console.log("✅ Received Shopify response.");
+      console.log(" Received Shopify response.");
 
-      // ✅ Defensive check
       if (!result?.data?.products?.edges) {
-        console.error("❌ No products found in result:", JSON.stringify(result, null, 2));
+        console.error(" No products found in result:", JSON.stringify(result, null, 2));
         break;
       }
 
@@ -87,10 +84,10 @@ const fetchShopifyVariants = async () => {
       endCursor = productEdges.length > 0 ? productEdges[productEdges.length - 1].cursor : null;
     }
 
-    console.log(`🎯 Total variants fetched: ${variants.length}`);
+    console.log(` Total variants fetched: ${variants.length}`);
     return variants;
   } catch (err) {
-    console.error("❌ Shopify GraphQL fetch failed:", err?.message || err);
+    console.error(" Shopify GraphQL fetch failed:", err?.message || err);
     return [];
   }
 };

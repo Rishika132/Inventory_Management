@@ -33,9 +33,9 @@ const Webhook4 = async (req, res) => {
 
         await sendThresholdEmails();
 
-    return res.status(200).json({ message: "✅ Order synced", inserted });
+    return res.status(200).json({ message: " Order synced", inserted });
   } catch (err) {
-    console.error("❌ Webhook error:", err.message);
+    console.error(" Webhook error:", err.message);
     return res.status(500).json({ error: "Failed to handle webhook" });
   }
 };

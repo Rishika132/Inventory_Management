@@ -12,8 +12,7 @@ const auth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, "dflfdkjreiwreriovnxvmnvxcm@#12fdfre#");
 
-    req.user = decoded; // 👈 Attach the entire payload to req.user
-
+    req.user = decoded; 
     next();
   } catch (err) {
     console.error("JWT Auth Error:", err);

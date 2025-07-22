@@ -5,7 +5,7 @@ const GRAPHQL_ENDPOINT = `https://${process.env.SHOPIFY_STORE}.myshopify.com/adm
 
 const graphqlRequest = async (payload) => {
   if (!payload || !payload.query) {
-    console.error("❌ GraphQL payload is missing 'query' field.");
+    console.error(" GraphQL payload is missing 'query' field.");
     return { errors: { query: "Required parameter missing or invalid" } };
   }
 
@@ -21,11 +21,11 @@ const graphqlRequest = async (payload) => {
   const result = await res.json();
 
   if (result.errors) {
-    console.error("❌ Shopify GraphQL API returned errors:", result.errors);
+    console.error(" Shopify GraphQL API returned errors:", result.errors);
   }
 
   if (!result.data) {
-    console.error("❌ No 'data' field in Shopify GraphQL response:", result);
+    console.error(" No 'data' field in Shopify GraphQL response:", result);
   }
 
   return result;

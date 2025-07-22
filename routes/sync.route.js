@@ -7,5 +7,4 @@ const { runFullSync,fetchProducts } = require("../controller/sync.controller");
 
 router.get("/sync",auth, runFullSync);
 router.get("/fetch-products",fetchProducts);
-
 module.exports = router;

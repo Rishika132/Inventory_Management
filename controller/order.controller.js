@@ -1,10 +1,10 @@
-// Add this to sync.controller.js
+
 const Order = require("../model/order.model");
 
 const getOrder = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;  // default: page 1
-    const limit = 50;  // fixed limit per page
+    const page = parseInt(req.query.page) || 1; 
+    const limit = 50; 
 
     const skip = (page - 1) * limit;
 
@@ -12,7 +12,7 @@ const getOrder = async (req, res) => {
     const totalCount = await Order.countDocuments();
 
     return res.status(200).json({
-      message: "✅ Order data fetched",
+      message: " Order data fetched",
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
@@ -20,7 +20,7 @@ const getOrder = async (req, res) => {
       data,
     });
   } catch (err) {
-    console.error("❌ Failed to fetch Order data:", err.message);
+    console.error(" Failed to fetch Order data:", err.message);
     return res.status(500).json({ error: "Failed to fetch order data" });
   }
 };

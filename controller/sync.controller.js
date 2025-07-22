@@ -148,7 +148,6 @@ const syncFromWholesaleToSync = async () => {
 
   const skuMap = new Map();
 
-  // Add Retail items (will take priority)
   for (const item of retailData) {
     skuMap.set(item.sku, {
       sku: item.sku,
@@ -161,7 +160,6 @@ const syncFromWholesaleToSync = async () => {
     });
   }
 
-  // Add Wholesale items only if SKU doesn't already exist
   for (const item of wholesaleData) {
     if (!skuMap.has(item.sku)) {
       skuMap.set(item.sku, {
@@ -210,7 +208,7 @@ const runFullSync = async (req, res) => {
     await sendThresholdEmails();
 
     return res.status(200).json({
-      message: "✅ Full sync completed successfully",
+      message: " Full sync completed successfully",
       wholesale: {
         totalBatches: wholesaleResult.batches.length,
         batches: wholesaleResult.batches.map(b => ({
@@ -245,20 +243,25 @@ const runFullSync = async (req, res) => {
 
     });
   } catch (err) {
-    console.error("❌ Full sync error:", err.message);
+    console.error(" Full sync error:", err.message);
     return res.status(500).json({ error: "Full sync failed" });
   }
 };
 
 
 const fetchProducts = async (request, response) => {
-    Sync.find()
-        .then(result => {
-            return response.status(200).json({products: result });
-        }).catch(err => {
-            return response.status(500).json({ error: "Internal Server Error" });
-        });
-}
+  try {
+    const result = await Sync.find();
+    const products = result.map(item => ({
+      product_title: item.product_title,
+      variant_title: item.variant_title,
+      sku: item.sku
+    }));
+    return response.status(200).json({ products });
+  } catch (err) {
+    return response.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   runFullSync,

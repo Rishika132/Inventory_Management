@@ -8,7 +8,6 @@ const handleCSVUpload = (req, res) => {
   fs.createReadStream(filePath)
     .pipe(csv())
     .on('data', (row) => {
-      // Ensure required fields exist
      if ((row.SKU || row.sku) && (row.Quantity || row.quantity) && (row.Threshold || row.threshold)) {
   records.push({
     sku: (row.SKU || row.sku).trim(),
@@ -19,9 +18,7 @@ const handleCSVUpload = (req, res) => {
 
     })
     .on('end', async () => {
-      fs.unlinkSync(filePath); // delete the uploaded file
-
-      // Fake req.body to pass to existing function
+      fs.unlinkSync(filePath);
       const fakeReq = { body: records };
       const fakeRes = {
         status: (code) => ({
@@ -29,7 +26,6 @@ const handleCSVUpload = (req, res) => {
         })
       };
 
-      // Reuse existing logic
       await updateBulkInventory(fakeReq, fakeRes);
     })
     .on('error', (err) => {

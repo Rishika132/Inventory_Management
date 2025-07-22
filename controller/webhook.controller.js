@@ -29,7 +29,7 @@ const Webhook = async (req, res) => {
 
         const retailProduct = await Retail.findOne({ sku });
             if (!retailProduct) {
-              console.warn(`❌ SKU ${sku} not found in Wholesale`);
+              console.warn(` SKU ${sku} not found in Wholesale`);
               continue;
             }
       
@@ -37,7 +37,7 @@ const Webhook = async (req, res) => {
             const currentQty = retailProduct.quantity || 0;
       
             if (!inventoryId) {
-              console.warn(`⚠️ Inventory ID missing for SKU ${sku}`);
+              console.warn(` Inventory ID missing for SKU ${sku}`);
               continue;
             }
       
@@ -59,7 +59,7 @@ const Webhook = async (req, res) => {
 
     return res.status(200).json({ message: " Order sync complete and order deleted" });
   } catch (err) {
-    console.error("❌ Webhook error:", err.message);
+    console.error(" Webhook error:", err.message);
     return res.status(500).json({ error: "Webhook processing failed" });
   }
 }
