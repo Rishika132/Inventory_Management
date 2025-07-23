@@ -6,6 +6,7 @@ const Webhook4 = async (req, res) => {
     const order = req.body;
 
     const orderId = order.id;
+    const channel=order.source_name;
     const storeName = req.headers["x-shopify-shop-domain"] || null;
 
     const lineItems = order.line_items || [];
@@ -25,6 +26,7 @@ const Webhook4 = async (req, res) => {
         variant_title,
         order_id: order.name,
         store_name: storeName,
+        channel:channel
       });
 
       const saved = await newOrder.save();

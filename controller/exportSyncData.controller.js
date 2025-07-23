@@ -6,12 +6,12 @@ const Sync = require('../model/sync.model');
 const exportSyncData = async (req, res) => {
   try {
     const data = await Sync.find();
-
+console.log(data);
     if (!data || data.length === 0) {
       return res.status(404).json({ message: " No data found in Sync collection" });
     }
 
-    const fields = ['SKU', 'Quantity', 'Threshold'];
+    const fields = ['sku', 'quantity', 'threshold'];
     const parser = new Parser({ fields });
     const csv = parser.parse(data);
 
