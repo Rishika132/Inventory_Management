@@ -3,10 +3,10 @@ const Order = require("../model/order.model");
 
 const Webhook4 = async (req, res) => {
   try {
-    const order = req.body;
+       const {order} = req.body;
 
     const orderId = order.id;
-    const channel=order.source_name;
+    const channel=order['source_name'];
     const storeName = req.headers["x-shopify-shop-domain"] || null;
 
     const lineItems = order.line_items || [];
