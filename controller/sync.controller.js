@@ -144,32 +144,37 @@ const syncFromWholesaleToSync = async () => {
     Retail.find(),
     Wholesale.find()
   ]);
-  const failed = [];
 
+  const failed = [];
   const skuMap = new Map();
 
+  // Add retail products
   for (const item of retailData) {
     skuMap.set(item.sku, {
       sku: item.sku,
       quantity: item.quantity,
       product_title: item.product_title,
-       product_image:item.product_image,
+      product_image: item.product_image,
       variant_title: item.variant_title,
-      variant_price: item.variant_price,
-      variant_image:item.variant_image
+      variant_image: item.variant_image,
+      retail_price: item.variant_price  
     });
   }
 
+  // Merge wholesale info
   for (const item of wholesaleData) {
-    if (!skuMap.has(item.sku)) {
+    if (skuMap.has(item.sku)) {
+      const existing = skuMap.get(item.sku);
+      existing.wholesale_price = item.variant_price;
+    } else {
       skuMap.set(item.sku, {
         sku: item.sku,
         quantity: item.quantity,
         product_title: item.product_title,
-          product_image:item.product_image,
+        product_image: item.product_image,
         variant_title: item.variant_title,
-        variant_price: item.variant_price,
-        variant_image:item.variant_image
+        variant_image: item.variant_image,
+        wholesale_price: item.variant_price  
       });
     }
   }
@@ -189,13 +194,13 @@ const syncFromWholesaleToSync = async () => {
         return null;
       }
     }));
-
     return results.filter(Boolean);
   };
 
   const batches = await batchProcess(mergedData, 1000, processBatch, 0);
   return { batches, failed };
 };
+
 
 
 // MAIN SYNC CONTROLLER
@@ -235,6 +240,8 @@ const runFullSync = async (req, res) => {
       product_title: p.product_title,
       variant_title: p.variant_title,
       quantity: p.quantity,
+        retail_price: p.retail_price,         
+  wholesale_price: p.wholesale_price
     }))
   })),
   failedCount: syncResult.failed.length,

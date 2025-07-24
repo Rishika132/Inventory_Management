@@ -72,7 +72,7 @@ const fetchRetailVariants = async () => {
             quantity: qty,
             product_id: product.id,
             product_title: product.title,
-          product_image: product.images?.edges?.[0]?.node?.url,
+            product_image: product.images?.edges?.[0]?.node?.url,
             variant_title: variant.title,
             variant_price: variant.price,
             variant_image: variant.image?.originalSrc
