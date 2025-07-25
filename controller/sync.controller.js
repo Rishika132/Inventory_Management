@@ -204,16 +204,28 @@ const syncFromWholesaleToSync = async () => {
 
 
 // MAIN SYNC CONTROLLER
+let fullSyncStatus = {
+  isRunning: false,
+  result: null,
+};
+
 const runFullSync = async (req, res) => {
+  if (fullSyncStatus.isRunning) {
+    return res.status(200).json({ success: false, message: "Full sync is still running." });
+  }
+
+  // Start sync process
+  fullSyncStatus.isRunning = true;
+  fullSyncStatus.result = null;
+
   try {
     const wholesaleResult = await syncWholesale();
     const retailResult = await syncRetail();
     const syncResult = await syncFromWholesaleToSync();
-
     await sendThresholdEmails();
 
-    return res.status(200).json({
-      message: " Full sync completed successfully",
+    const result = {
+      message: "Full sync completed successfully",
       wholesale: {
         totalBatches: wholesaleResult.batches.length,
         batches: wholesaleResult.batches.map(b => ({
@@ -230,30 +242,35 @@ const runFullSync = async (req, res) => {
         })),
         skippedCount: retailResult.skipped.length,
       },
-   sync: {
-  totalBatches: syncResult.batches.length,
-  batches: syncResult.batches.map(b => ({
-    batchNumber: b.batchNumber,
-    processedCount: b.processedCount,
-    uploaded: b.data.map(p => ({
-      sku: p.sku,
-      product_title: p.product_title,
-      variant_title: p.variant_title,
-      quantity: p.quantity,
-        retail_price: p.retail_price,         
-  wholesale_price: p.wholesale_price
-    }))
-  })),
-  failedCount: syncResult.failed.length,
-  failed: syncResult.failed,
-},
-
-    });
+      sync: {
+        totalBatches: syncResult.batches.length,
+        batches: syncResult.batches.map(b => ({
+          batchNumber: b.batchNumber,
+          processedCount: b.processedCount,
+          uploaded: b.data.map(p => ({
+            sku: p.sku,
+            product_title: p.product_title,
+            variant_title: p.variant_title,
+            quantity: p.quantity,
+            retail_price: p.retail_price,
+            wholesale_price: p.wholesale_price,
+          }))
+        })),
+        failedCount: syncResult.failed.length,
+        failed: syncResult.failed,
+      }
+    };
+    fullSyncStatus.result = result;
+    fullSyncStatus.isRunning = false;
   } catch (err) {
-    console.error(" Full sync error:", err.message);
-    return res.status(500).json({ error: "Full sync failed" });
+    console.error("Full sync error:", err.message);
+    fullSyncStatus.isRunning = false;
+    fullSyncStatus.result = { error: "Full sync failed" };
   }
+
+  return res.status(200).json({ success: false, message: "Full sync started, please poll." });
 };
+
 
 
 const fetchProducts = async (request, response) => {
