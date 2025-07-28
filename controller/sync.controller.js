@@ -3,13 +3,83 @@ const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
 const SkippedProduct = require("../model/skipped.model"); 
-const {sendThresholdEmails} = require("./nodemailer");
+const { sendThresholdEmails } = require("./nodemailer");
 
 const { fetchShopifyVariants } = require("../utils/wholesaleproduct");
 const { fetchRetailVariants } = require("../utils/retailproduct");
 
+const { startSyncCron, stopSyncCron ,registerContinueSyncJob } = require("../cron");
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// ========== TRIGGER SYNC ==========
+const triggerSync = async (req, res) => {
+  try {
+    await SyncStatus.findOneAndUpdate({}, {
+      inprogress: true,
+      retailCursor: null,
+      wholesaleCursor: null
+    }, { upsert: true });
+
+    startSyncCron();
+
+    return res.status(200).json({ message: "Sync started successfully" });
+  } catch (err) {
+    console.error("Sync trigger error:", err.message);
+    return res.status(500).json({ error: "Failed to start sync" });
+  }
+};
+
+// ========== CONTINUE SYNC ==========
+let isRunning = false;
+
+const continueSyncJob = async () => {
+  if (isRunning) {
+    console.log("⚠️ Previous sync job still running. Skipping this cycle.");
+    return;
+  }
+
+  isRunning = true;
+
+  try {
+    const status = await SyncStatus.findOne();
+    if (!status?.inprogress) {
+      console.log("No sync in progress. Skipping this run.");
+      return;
+    }
+
+    const { retailCursor, wholesaleCursor } = status;
+
+    const wholesaleRes = await fetchShopifyVariants(wholesaleCursor);
+    const retailRes = await fetchRetailVariants(retailCursor);
+
+    await processVariants(wholesaleRes.variants, "wholesale");
+    await processVariants(retailRes.variants, "retail");
+
+    console.log("🧭 wholesaleCursor:", wholesaleRes.endCursor);
+    console.log("🧭 retailCursor:", retailRes.endCursor);
+
+    await SyncStatus.findOneAndUpdate({}, {
+      wholesaleCursor: wholesaleRes.endCursor || null,
+      retailCursor: retailRes.endCursor || null,
+    });
+
+    if (!wholesaleRes.endCursor && !retailRes.endCursor) {
+      console.log("🎉 Sync complete for both wholesale and retail.");
+      await syncFromWholesaleToSync();
+      await sendThresholdEmails();
+      await SyncStatus.findOneAndUpdate({}, { inprogress: false });
+      stopSyncCron();
+    }
+  } catch (err) {
+    console.error("❌ Sync job failed:", err.message);
+  } finally {
+    isRunning = false;
+  }
+};
+
+
+// ========== PROCESS VARIANTS ==========
 const batchProcess = async (data, batchSize, handler, delayMs = 0) => {
   const total = data.length;
   const batches = [];
@@ -35,13 +105,11 @@ const batchProcess = async (data, batchSize, handler, delayMs = 0) => {
   return batches;
 };
 
-// WHOLESALE SYNC
-const syncWholesale = async () => {
-  const variants = await fetchShopifyVariants();
+const processVariants = async (variants, type) => {
   const skipped = [];
 
   const processBatch = async (batch) => {
-    const results = await Promise.all(batch.map(async (variant) => {
+    return await Promise.all(batch.map(async (variant) => {
       const sku = variant.sku?.trim();
       if (!sku) {
         await SkippedProduct.create({
@@ -54,7 +122,9 @@ const syncWholesale = async () => {
       }
 
       try {
-        return await Wholesale.findOneAndUpdate(
+        const model = type === "wholesale" ? Wholesale : Retail;
+
+        return await model.findOneAndUpdate(
           { sku },
           {
             inventory_item_id: variant.inventory_item_id,
@@ -62,10 +132,10 @@ const syncWholesale = async () => {
             sku,
             product_id: variant.product_id,
             product_title: variant.product_title,
-            product_image:variant.product_image,
+            product_image: variant.product_image,
             variant_title: variant.variant_title,
             variant_price: variant.variant_price,
-            variant_image:variant.variant_image
+            variant_image: variant.variant_image
           },
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
@@ -79,67 +149,12 @@ const syncWholesale = async () => {
         return null;
       }
     }));
-
-    return results.filter(Boolean);
   };
 
-  const batches = await batchProcess(variants, 1000, processBatch, 0);
-  return { batches, skipped };
+  await batchProcess(variants, 100, processBatch);
 };
 
-// RETAIL SYNC
-const syncRetail = async () => {
-  const variants = await fetchRetailVariants();
-  const skipped = [];
-
-  const processBatch = async (batch) => {
-    const results = await Promise.all(batch.map(async (variant) => {
-      const sku = variant.sku?.trim();
-      if (!sku) {
-        await SkippedProduct.create({
-          productId: variant.product_id,
-          reason: "Missing SKU",
-          json: variant,
-        });
-        skipped.push({ reason: "Missing SKU", productId: variant.product_id });
-        return null;
-      }
-
-      try {
-        return await Retail.findOneAndUpdate(
-          { sku },
-          {
-            inventory_item_id: variant.inventory_item_id,
-            quantity: variant.quantity,
-            sku,
-            product_id: variant.product_id,
-            product_title: variant.product_title,
-             product_image:variant.product_image,
-            variant_title: variant.variant_title,
-            variant_price: variant.variant_price,
-            variant_image:variant.variant_image
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (err) {
-        await SkippedProduct.create({
-          productId: variant.product_id,
-          reason: err.message,
-          json: variant,
-        });
-        skipped.push({ sku, reason: err.message });
-        return null;
-      }
-    }));
-
-    return results.filter(Boolean);
-  };
-
-  const batches = await batchProcess(variants, 1000, processBatch, 0);
-  return { batches, skipped };
-};
-
-// SYNC WHOLESALE ➡ SYNC COLLECTION
+// ========== SYNC COLLECTION MERGE ==========
 const syncFromWholesaleToSync = async () => {
   const [retailData, wholesaleData] = await Promise.all([
     Retail.find(),
@@ -149,7 +164,6 @@ const syncFromWholesaleToSync = async () => {
   const failed = [];
   const skuMap = new Map();
 
-  // Add retail products
   for (const item of retailData) {
     skuMap.set(item.sku, {
       sku: item.sku,
@@ -162,11 +176,9 @@ const syncFromWholesaleToSync = async () => {
     });
   }
 
-  // Merge wholesale info
   for (const item of wholesaleData) {
     if (skuMap.has(item.sku)) {
-      const existing = skuMap.get(item.sku);
-      existing.wholesale_price = item.variant_price;
+      skuMap.get(item.sku).wholesale_price = item.variant_price;
     } else {
       skuMap.set(item.sku, {
         sku: item.sku,
@@ -183,7 +195,7 @@ const syncFromWholesaleToSync = async () => {
   const mergedData = Array.from(skuMap.values());
 
   const processBatch = async (batch) => {
-    const results = await Promise.all(batch.map(async (item) => {
+    return await Promise.all(batch.map(async (item) => {
       try {
         return await Sync.findOneAndUpdate(
           { sku: item.sku },
@@ -195,82 +207,13 @@ const syncFromWholesaleToSync = async () => {
         return null;
       }
     }));
-    return results.filter(Boolean);
   };
 
-  const batches = await batchProcess(mergedData, 1000, processBatch, 0);
-  return { batches, failed };
+  await batchProcess(mergedData, 100, processBatch);
 };
 
-const setSyncInProgress = async () => {
-  let status = await SyncStatus.findOne();
-  if (status) {
-    status.inprogress = true;
-    await status.save();
-  } else {
-    await SyncStatus.create({ inprogress: true });
-  }
-};
-
-const setSyncComplete = async () => {
-  await SyncStatus.updateOne({}, { inprogress: false });
-};
-
-// MAIN SYNC CONTROLLER
-const runFullSync = async (req, res) => {
-  try {
-      await setSyncInProgress();
-    const wholesaleResult = await syncWholesale();
-    const retailResult = await syncRetail();
-    const syncResult = await syncFromWholesaleToSync();
-
-    await sendThresholdEmails();
-  await setSyncComplete();
-    return res.status(200).json({
-      message: " Full sync completed successfully",
-      wholesale: {
-        totalBatches: wholesaleResult.batches.length,
-        batches: wholesaleResult.batches.map(b => ({
-          batchNumber: b.batchNumber,
-          processedCount: b.processedCount,
-        })),
-        skippedCount: wholesaleResult.skipped.length,
-      },
-      retail: {
-        totalBatches: retailResult.batches.length,
-        batches: retailResult.batches.map(b => ({
-          batchNumber: b.batchNumber,
-          processedCount: b.processedCount,
-        })),
-        skippedCount: retailResult.skipped.length,
-      },
-   sync: {
-  totalBatches: syncResult.batches.length,
-  batches: syncResult.batches.map(b => ({
-    batchNumber: b.batchNumber,
-    processedCount: b.processedCount,
-    uploaded: b.data.map(p => ({
-      sku: p.sku,
-      product_title: p.product_title,
-      variant_title: p.variant_title,
-      quantity: p.quantity,
-      retail_price: p.retail_price,         
-      wholesale_price: p.wholesale_price
-    }))
-  })),
-  failedCount: syncResult.failed.length,
-  failed: syncResult.failed,
-},
-
-    });
-  } catch (err) {
-    console.error(" Full sync error:", err.message);
-    return res.status(500).json({ error: "Full sync failed" });
-  }
-};
-
-
-const fetchProducts = async (request, response) => {
+// ========== VIEW PRODUCTS ==========
+const fetchProducts = async (req, res) => {
   try {
     const result = await Sync.find();
     const products = result.map(item => ({
@@ -278,17 +221,15 @@ const fetchProducts = async (request, response) => {
       variant_title: item.variant_title,
       sku: item.sku
     }));
-    return response.status(200).json({ products });
+    return res.status(200).json({ products });
   } catch (err) {
-    return response.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 module.exports = {
-  runFullSync,
-  syncWholesale,
-  syncRetail,
-  syncFromWholesaleToSync,
+  triggerSync,
+  continueSyncJob,
   fetchProducts
 };
-
+registerContinueSyncJob(continueSyncJob); 

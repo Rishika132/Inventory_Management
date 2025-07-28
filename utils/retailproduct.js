@@ -82,10 +82,11 @@ const fetchRetailVariants = async () => {
 
       hasNextPage = result.data.products.pageInfo.hasNextPage;
       endCursor = productEdges.length > 0 ? productEdges[productEdges.length - 1].cursor : null;
+      
     }
 
     console.log(`Total variants fetched: ${variants.length}`);
-    return variants;
+    return {variants,retailCursor:endCursor};
   } catch (err) {
     console.error(" Shopify GraphQL fetch failed:", err?.message || err);
     return [];
