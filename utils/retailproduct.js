@@ -14,7 +14,7 @@ const fetchRetailVariants = async () => {
   try {
     const query = `
   {
-    products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
+    products(first: 250${endCursor ? `, after: "${endCursor}"` : ""}) {
      pageInfo {
         endCursor
         hasNextPage
