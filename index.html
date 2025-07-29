@@ -1,0 +1,23 @@
+<!-- save as test.html and open in browser -->
+<!DOCTYPE html>
+<html>
+  <body>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+      const socket = io("http://localhost:3000");
+
+      socket.on("connect", () => {
+        console.log("🟢 Connected to WebSocket");
+      });
+
+      socket.on("sync-complete", (data) => {
+        console.log("✅ Sync Complete:", data);
+        socket.disconnect(); // optional
+      });
+
+      socket.on("disconnect", () => {
+        console.log("🔴 Socket disconnected");
+      });
+    </script>
+  </body>
+</html>

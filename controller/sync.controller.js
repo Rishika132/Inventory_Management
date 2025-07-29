@@ -15,7 +15,6 @@ const syncWholesale = async () => {
   const skipped = [];
   const processed = [];
   if(variants.all) {
-    console.log(variants)
     let wholeData= Wholesale.find();
     processed.push(...wholeData) ;
     let skippedData=SkippedProduct.find();
@@ -251,7 +250,6 @@ const runFullSync = async (req, res) => {
       wholesale_product:false,
       retail_product:false
     }, { upsert: true });
-
   
   let data = await runFullSyncFunction();
   if(data.success){
