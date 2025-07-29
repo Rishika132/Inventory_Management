@@ -1,16 +1,24 @@
 const { graphqlRequest } = require("./retailShopify");
+const syncStatus = require('../model/syncstatus.model')
 
 const fetchRetailVariants = async () => {
   const variants = [];
-  let hasNextPage = true;
-  let endCursor = null;
 
+  let {retail_cursor,retail_product} = await syncStatus.findOne({},'');
+  let endCursor = retail_cursor;
+ if(retail_product) {
+    return {variants:{
+      all:true
+    }}
+  }
   try {
-    while (hasNextPage) {
     const query = `
   {
     products(first: 100${endCursor ? `, after: "${endCursor}"` : ""}) {
-      pageInfo { hasNextPage }
+     pageInfo {
+        endCursor
+        hasNextPage
+      }
       edges {
         cursor
         node {
@@ -24,7 +32,7 @@ const fetchRetailVariants = async () => {
             }
           }
         }
-          variants(first: 10) {
+          variants(first: 100) {
             edges {
               node {
                 id
@@ -52,13 +60,13 @@ const fetchRetailVariants = async () => {
       const result = await graphqlRequest({ query });
       console.log(" Received Shopify response.");
 
-      if (!result?.data?.products?.edges) {
-        console.error(" No products found in result:", JSON.stringify(result, null, 2));
-        break;
-      }
+      // if (!result?.data?.products?.edges) {
+      //   console.error(" No products found in result:", JSON.stringify(result, null, 2));
+      //   break;
+      // }
 
       const productEdges = result.data.products.edges;
-
+console.log(productEdges[0].node.id,"retail_product")
       for (const productEdge of productEdges) {
         const product = productEdge.node;
         for (const variantEdge of product.variants.edges) {
@@ -80,13 +88,16 @@ const fetchRetailVariants = async () => {
         }
       }
 
-      hasNextPage = result.data.products.pageInfo.hasNextPage;
-      endCursor = productEdges.length > 0 ? productEdges[productEdges.length - 1].cursor : null;
+   let product_done=false;
+        let hasNextPage = result.data.products.pageInfo.hasNextPage;
+        endCursor = result.data.products.pageInfo.endCursor;
+        if(!hasNextPage) product_done=true;
+     await syncStatus.findOneAndUpdate({},{ $set: { retail_cursor: endCursor,retail_product:product_done } },{ new: true });
       
-    }
+    
 
     console.log(`Total variants fetched: ${variants.length}`);
-    return {variants,retailCursor:endCursor};
+    return {variants,endCursor};
   } catch (err) {
     console.error(" Shopify GraphQL fetch failed:", err?.message || err);
     return [];

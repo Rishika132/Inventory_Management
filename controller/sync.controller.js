@@ -1,167 +1,148 @@
-const SyncStatus = require("../model/syncstatus.model");
 const Wholesale = require("../model/wholesale.model");
 const Retail = require("../model/retail.model");
 const Sync = require("../model/sync.model");
-const SkippedProduct = require("../model/skipped.model"); 
+const SkippedProduct = require("../model/skipped.model");
 const { sendThresholdEmails } = require("./nodemailer");
-
 const { fetchShopifyVariants } = require("../utils/wholesaleproduct");
 const { fetchRetailVariants } = require("../utils/retailproduct");
-
-const { startSyncCron, stopSyncCron ,registerContinueSyncJob } = require("../cron");
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// ========== TRIGGER SYNC ==========
-const triggerSync = async (req, res) => {
-  try {
-    await SyncStatus.findOneAndUpdate({}, {
-      inprogress: true,
-      retailCursor: null,
-      wholesaleCursor: null
-    }, { upsert: true });
-
-    startSyncCron();
-
-    return res.status(200).json({ message: "Sync started successfully" });
-  } catch (err) {
-    console.error("Sync trigger error:", err.message);
-    return res.status(500).json({ error: "Failed to start sync" });
-  }
-};
-
-// ========== CONTINUE SYNC ==========
-let isRunning = false;
-
-const continueSyncJob = async () => {
-  if (isRunning) {
-    console.log("⚠️ Previous sync job still running. Skipping this cycle.");
-    return;
-  }
-
-  isRunning = true;
-
-  try {
-    const status = await SyncStatus.findOne();
-    if (!status?.inprogress) {
-      console.log("No sync in progress. Skipping this run.");
-      return;
-    }
-
-    const { retailCursor, wholesaleCursor } = status;
-
-    const wholesaleRes = await fetchShopifyVariants(wholesaleCursor);
-    const retailRes = await fetchRetailVariants(retailCursor);
-
-    await processVariants(wholesaleRes.variants, "wholesale");
-    await processVariants(retailRes.variants, "retail");
-
-    console.log("🧭 wholesaleCursor:", wholesaleRes.endCursor);
-    console.log("🧭 retailCursor:", retailRes.endCursor);
-
-    await SyncStatus.findOneAndUpdate({}, {
-      wholesaleCursor: wholesaleRes.endCursor || null,
-      retailCursor: retailRes.endCursor || null,
-    });
-
-    if (!wholesaleRes.endCursor && !retailRes.endCursor) {
-      console.log("🎉 Sync complete for both wholesale and retail.");
-      await syncFromWholesaleToSync();
-      await sendThresholdEmails();
-      await SyncStatus.findOneAndUpdate({}, { inprogress: false });
-      stopSyncCron();
-    }
-  } catch (err) {
-    console.error("❌ Sync job failed:", err.message);
-  } finally {
-    isRunning = false;
-  }
-};
+const syncStatus = require('../model/syncstatus.model');
 
 
-// ========== PROCESS VARIANTS ==========
-const batchProcess = async (data, batchSize, handler, delayMs = 0) => {
-  const total = data.length;
-  const batches = [];
+// WHOLESALE SYNC
+const syncWholesale = async () => {
+  const {variants} = await fetchShopifyVariants();
 
-  for (let i = 0; i < total; i += batchSize) {
-    const batch = data.slice(i, i + batchSize);
-    const batchNumber = i / batchSize + 1;
-    console.log(`Processing batch ${batchNumber} of ${Math.ceil(total / batchSize)}`);
-
-    const processed = await handler(batch);
-
-    batches.push({
-      batchNumber,
-      processedCount: processed.length,
-      data: processed,
-    });
-
-    if (i + batchSize < total && delayMs > 0) {
-      await delay(delayMs);
-    }
-  }
-
-  return batches;
-};
-
-const processVariants = async (variants, type) => {
   const skipped = [];
+  const processed = [];
+  if(variants.all) {
+    processed = Wholesale.find();
+    skipped = SkippedProduct.find();
+    return { processed, skipped };
+  }
 
-  const processBatch = async (batch) => {
-    return await Promise.all(batch.map(async (variant) => {
-      const sku = variant.sku?.trim();
-      if (!sku) {
-        await SkippedProduct.create({
-          productId: variant.product_id,
-          reason: "Missing SKU",
-          json: variant,
-        });
-        skipped.push({ reason: "Missing SKU", productId: variant.product_id });
-        return null;
-      }
+for (const variant of variants) {
+  const sku = variant.sku?.trim();
 
-      try {
-        const model = type === "wholesale" ? Wholesale : Retail;
+  if (!sku) {
+    const alreadySkipped = await SkippedProduct.findOne({
+      productId: variant.product_id,
+      reason: "Missing SKU"
+    });
 
-        return await model.findOneAndUpdate(
-          { sku },
-          {
-            inventory_item_id: variant.inventory_item_id,
-            quantity: variant.quantity,
-            sku,
-            product_id: variant.product_id,
-            product_title: variant.product_title,
-            product_image: variant.product_image,
-            variant_title: variant.variant_title,
-            variant_price: variant.variant_price,
-            variant_image: variant.variant_image
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (err) {
-        await SkippedProduct.create({
-          productId: variant.product_id,
-          reason: err.message,
-          json: variant,
-        });
-        skipped.push({ sku, reason: err.message });
-        return null;
-      }
-    }));
-  };
+    if (!alreadySkipped) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: "Missing SKU",
+        json: variant,
+      });
+    }
 
-  await batchProcess(variants, 100, processBatch);
+    skipped.push({ reason: "Missing SKU", productId: variant.product_id });
+    continue;
+}
+
+
+    try {
+      const result = await Wholesale.findOneAndUpdate(
+        { sku },
+        {
+          inventory_item_id: variant.inventory_item_id,
+          quantity: variant.quantity,
+          sku,
+          product_id: variant.product_id,
+          product_title: variant.product_title,
+          product_image: variant.product_image,
+          variant_title: variant.variant_title,
+          variant_price: variant.variant_price,
+          variant_image: variant.variant_image,
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      processed.push(result);
+    } catch (err) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: err.message,
+        json: variant,
+      });
+      skipped.push({ sku, reason: err.message });
+    }
+  }
+
+  return { processed, skipped };
 };
 
-// ========== SYNC COLLECTION MERGE ==========
+// RETAIL SYNC
+const syncRetail = async () => {
+  const {variants} = await fetchRetailVariants();
+  const skipped = [];
+  const processed = [];
+ if(variants.all) {
+    processed = Retail.find();
+    skipped = SkippedProduct.find();
+    return { processed, skipped };
+  }
+for (const variant of variants) {
+  const sku = variant.sku?.trim();
+
+  if (!sku) {
+    const alreadySkipped = await SkippedProduct.findOne({
+      productId: variant.product_id,
+      reason: "Missing SKU"
+    });
+
+    if (!alreadySkipped) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: "Missing SKU",
+        json: variant,
+      });
+    }
+
+    skipped.push({ reason: "Missing SKU", productId: variant.product_id });
+    continue;
+}
+
+
+    try {
+      const result = await Retail.findOneAndUpdate(
+        { sku },
+        {
+          inventory_item_id: variant.inventory_item_id,
+          quantity: variant.quantity,
+          sku,
+          product_id: variant.product_id,
+          product_title: variant.product_title,
+          product_image: variant.product_image,
+          variant_title: variant.variant_title,
+          variant_price: variant.variant_price,
+          variant_image: variant.variant_image,
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      processed.push(result);
+    } catch (err) {
+      await SkippedProduct.create({
+        productId: variant.product_id,
+        reason: err.message,
+        json: variant,
+      });
+      skipped.push({ sku, reason: err.message });
+    }
+  }
+
+  return { processed, skipped};
+};
+
+// SYNC WHOLESALE ➡ SYNC COLLECTION
 const syncFromWholesaleToSync = async () => {
   const [retailData, wholesaleData] = await Promise.all([
     Retail.find(),
-    Wholesale.find()
+    Wholesale.find(),
   ]);
-
   const failed = [];
+  const processed = [];
+
   const skuMap = new Map();
 
   for (const item of retailData) {
@@ -171,65 +152,113 @@ const syncFromWholesaleToSync = async () => {
       product_title: item.product_title,
       product_image: item.product_image,
       variant_title: item.variant_title,
+      variant_price: item.variant_price,
       variant_image: item.variant_image,
-      retail_price: item.variant_price  
     });
   }
 
   for (const item of wholesaleData) {
-    if (skuMap.has(item.sku)) {
-      skuMap.get(item.sku).wholesale_price = item.variant_price;
-    } else {
+    if (!skuMap.has(item.sku)) {
       skuMap.set(item.sku, {
         sku: item.sku,
         quantity: item.quantity,
         product_title: item.product_title,
         product_image: item.product_image,
         variant_title: item.variant_title,
+        variant_price: item.variant_price,
         variant_image: item.variant_image,
-        wholesale_price: item.variant_price  
       });
     }
   }
 
   const mergedData = Array.from(skuMap.values());
 
-  const processBatch = async (batch) => {
-    return await Promise.all(batch.map(async (item) => {
-      try {
-        return await Sync.findOneAndUpdate(
-          { sku: item.sku },
-          item,
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (err) {
-        failed.push({ sku: item.sku, error: err.message });
-        return null;
-      }
-    }));
-  };
+  for (const item of mergedData) {
+    try {
+      const result = await Sync.findOneAndUpdate(
+        { sku: item.sku },
+        item,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      processed.push(result);
+    } catch (err) {
+      failed.push({ sku: item.sku, error: err.message });
+    }
+  }
 
-  await batchProcess(mergedData, 100, processBatch);
+  return { processed, failed };
 };
 
-// ========== VIEW PRODUCTS ==========
-const fetchProducts = async (req, res) => {
+async function runFullSyncFunction() {
   try {
-    const result = await Sync.find();
-    const products = result.map(item => ({
-      product_title: item.product_title,
-      variant_title: item.variant_title,
-      sku: item.sku
-    }));
-    return res.status(200).json({ products });
+let {inprogress} = await syncStatus.findOne({},'')
+   if (inprogress) {
+  console.log("Skipping sync because inprogress is false");
+  return { success: false, message: "Sync not in progress" };
+}
+await syncStatus.findOneAndUpdate({}, { inprogress: true });
+    const wholesaleResult = await syncWholesale();
+    const retailResult = await syncRetail();
+    const syncResult = await syncFromWholesaleToSync();
+
+    await sendThresholdEmails();
+    await syncStatus.findOneAndUpdate({}, { inprogress: false });
+    return ({
+      success:true,
+      message: "✅ Full sync completed successfully",
+      wholesale: {
+        processedCount: wholesaleResult.processed.length,
+        skippedCount: wholesaleResult.skipped.length,
+        data: wholesaleResult.processed,
+      },
+      retail: {
+        processedCount: retailResult.processed.length,
+        skippedCount: retailResult.skipped.length,
+        data: retailResult.processed,
+      },
+      sync: {
+        processedCount: syncResult.processed.length,
+        failedCount: syncResult.failed.length,
+        data: syncResult.processed.map(p => ({
+          sku: p.sku,
+          product_title: p.product_title,
+          variant_title: p.variant_title,
+          quantity: p.quantity,
+        })),
+        failed: syncResult.failed,
+      },
+    });
   } catch (err) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Full sync error:", err.message);
+    return {
+      success:false
+    }
+  }
+}
+
+// MAIN SYNC CONTROLLER
+const runFullSync = async (req, res) => {
+  await syncStatus.findOneAndUpdate({}, {
+      retailCursor: null,
+      wholesaleCursor: null,
+      syncing:true,
+      wholesale_product:false,
+      retail_product:false
+    }, { upsert: true });
+
+  
+  let data = await runFullSyncFunction();
+  if(data.success){
+    return res.status(200).json(data);
+  }else{
+    res.status(500).json({ error: "Full sync failed" });
   }
 };
 
 module.exports = {
-  triggerSync,
-  continueSyncJob,
-  fetchProducts
+  runFullSync,
+  syncWholesale,
+  syncRetail,
+  runFullSyncFunction,
+  syncFromWholesaleToSync,
 };
-registerContinueSyncJob(continueSyncJob); 

@@ -1,36 +1,25 @@
 const cron = require('node-cron');
-let job;
-let continueSyncJobFn = null;
+const syncStatus = require('./model/syncstatus.model');
+ 
+const {runFullSyncFunction} = require('./controller/sync.controller');
 
-function registerContinueSyncJob(fn) {
-  continueSyncJobFn = fn;
+const syncCron = cron.schedule("*/30 * * * * *",async ()=>{
+  console.log('check',new Date());
+  let {wholesale_product,retail_product} = await syncStatus.findOne({},'');
+if(wholesale_product===true && retail_product===true){
+    syncStatus.findOneAndUpdate({}, { syncing: false });
 }
-
-function startSyncCron() {
-  if (!continueSyncJobFn) {
-    console.warn("⚠️ continueSyncJobFn not registered");
-    return;
+    await runFullSyncFunction();
+});
+cron.schedule("* * * * * *",async ()=>{
+  let syncing = await syncStatus.findOne({},'');
+  // console.log("Syncing ",syncing);
+  if(syncing){
+    syncCron.start();
+  }else{
+    syncCron.stop();
+    
   }
+});
 
-  if (!job) {
-    job = cron.schedule("*/30 * * * * *", async () => {
-      console.log("🔁 Running sync job...");
-      await continueSyncJobFn(); 
-    });
-    console.log("✅ Sync cron started");
-  }
-}
 
-function stopSyncCron() {
-  if (job) {
-    job.stop();
-    job = null;
-    console.log("🛑 Sync cron stopped");
-  }
-}
-
-module.exports = {
-  startSyncCron,
-  stopSyncCron,
-  registerContinueSyncJob,
-};

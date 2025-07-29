@@ -38,16 +38,17 @@ async function sendThresholdEmails() {
     <b>Inventory Monitor</b> `
   };
   
-transporter.sendMail(mailOptions, (error, info) => {
-  if (error) {
-    console.error(" Email error:", error);
-    reject(false);
-  } else {
-    console.log("Email sent:", info.response);
-    resolve(true);
-  }
-});
-
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Email error:", error);
+        reject(error); 
+      } else {
+        console.log("Email sent:", info.response);
+        resolve(true);
+      }
+    });
+  });
 }
 
 module.exports = { sendThresholdEmails };
