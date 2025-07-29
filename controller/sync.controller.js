@@ -258,10 +258,19 @@ const runFullSync = async (req, res) => {
     res.status(500).json({ error: "Full sync failed" });
   }
 };
+const fetchStatus = async (request, response) => {
+    syncStatus.find()
+        .then(result => {
+            return response.status(200).json({ status : result });
+        }).catch(err => {
+            return response.status(500).json({ error: "Internal Server Error" });
+        });
+}
 
 module.exports = {
   runFullSync,
   syncWholesale,
+  fetchStatus,
   syncRetail,
   runFullSyncFunction,
   syncFromWholesaleToSync,
