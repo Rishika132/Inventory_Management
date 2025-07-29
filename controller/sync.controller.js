@@ -198,7 +198,7 @@ async function runFullSyncFunction() {
   try {
 let {inprogress} = await syncStatus.findOne({},'')
    if (inprogress) {
-  console.log("Skipping sync because inprogress is false");
+  console.log("Skipping sync because inprogress is true");
   return { success: false, message: "Sync not in progress" };
 }
 await syncStatus.findOneAndUpdate({}, { inprogress: true });

@@ -21,7 +21,6 @@ cron.schedule("* * * * * *",async ()=>{
     syncCron.start();
   }else{
     syncCron.stop();
-    
   }
 });
 
