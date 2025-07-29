@@ -9,6 +9,7 @@ const fetchShopifyVariants = async () => {
       all:true
     }}
   }
+  console.log('wholesale');
   try {
     const query = `
   {

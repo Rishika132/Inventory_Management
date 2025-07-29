@@ -3,17 +3,20 @@ const syncStatus = require('./model/syncstatus.model');
  
 const {runFullSyncFunction} = require('./controller/sync.controller');
 
-const syncCron = cron.schedule("*/30 * * * * *",async ()=>{
+const syncCron = cron.schedule("*/10 * * * * *",async ()=>{
   console.log('check',new Date());
-  let {wholesale_product,retail_product} = await syncStatus.findOne({},'');
+  let syncData = await syncStatus.findOne({},'');
+  let wholesale_product = syncData?.wholesale_product;
+  let retail_product = syncData?.retail_product;
 if(wholesale_product===true && retail_product===true){
-    syncStatus.findOneAndUpdate({}, { syncing: false });
+  console.log('cron');
+  await syncStatus.findOneAndUpdate({}, { syncing: false });
 }
     await runFullSyncFunction();
 });
 cron.schedule("* * * * * *",async ()=>{
-  let syncing = await syncStatus.findOne({},'');
-  // console.log("Syncing ",syncing);
+  let syncData = await syncStatus.findOne({},'');
+  let syncing = syncData?.syncing;
   if(syncing){
     syncCron.start();
   }else{

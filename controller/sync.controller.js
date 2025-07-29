@@ -15,8 +15,11 @@ const syncWholesale = async () => {
   const skipped = [];
   const processed = [];
   if(variants.all) {
-    processed = Wholesale.find();
-    skipped = SkippedProduct.find();
+    console.log(variants)
+    let wholeData= Wholesale.find();
+    processed.push(...wholeData) ;
+    let skippedData=SkippedProduct.find();
+    skipped.push(...skippedData) ;
     return { processed, skipped };
   }
 
@@ -78,8 +81,10 @@ const syncRetail = async () => {
   const skipped = [];
   const processed = [];
  if(variants.all) {
-    processed = Retail.find();
-    skipped = SkippedProduct.find();
+    let retailData= Wholesale.find();
+    processed.push(...retailData) ;
+    let skipData=SkippedProduct.find();
+    skipped.push(...skipData) ;
     return { processed, skipped };
   }
 for (const variant of variants) {
@@ -198,6 +203,7 @@ let {inprogress} = await syncStatus.findOne({},'')
 }
 await syncStatus.findOneAndUpdate({}, { inprogress: true });
     const wholesaleResult = await syncWholesale();
+    console.log(wholesaleResult);
     const retailResult = await syncRetail();
     const syncResult = await syncFromWholesaleToSync();
 
